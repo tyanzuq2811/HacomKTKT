@@ -1,0 +1,4 @@
+# Cài PaddlePaddle GPU đúng CUDA trước, sau đó:
+paddleocr[all]>=3.3,<4
+sentence-transformers>=3.0,<6
+# BGE-M3 phải được tải trước vào thư mục model nội bộ; ứng dụng dùng local_files_only=True.

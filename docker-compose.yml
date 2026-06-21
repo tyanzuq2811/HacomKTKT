@@ -1,0 +1,25 @@
+services:
+  hsmt-app:
+    build: .
+    ports:
+      - "127.0.0.1:8501:8501"
+    env_file: .env
+    environment:
+      HSMT_STRICT_PRIVACY: "1"
+      HSMT_ALLOW_NETWORK: "0"
+    volumes:
+      - ./models:/app/models:ro
+      - ./reports:/app/reports
+    networks:
+      - hsmt_internal
+    read_only: true
+    tmpfs:
+      - /tmp:size=4g,mode=1770
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+networks:
+  hsmt_internal:
+    internal: true

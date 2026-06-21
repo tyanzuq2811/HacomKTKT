@@ -1,0 +1,13 @@
+[project]
+name = "hsmt-enterprise-ai"
+version = "7.0.0"
+description = "Local-only OCR and tender comparison for HSMT/HSDT"
+requires-python = ">=3.10,<3.13"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
