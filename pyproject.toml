@@ -1,0 +1,18 @@
+[project]
+name = "hsdt-peer-comparison"
+version = "7.2.0"
+description = "Local-only peer comparison for 2 or more bid workbooks; no baseline bidder"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn>=0.30",
+  "python-multipart>=0.0.9",
+  "openpyxl>=3.1",
+  "xlsxwriter>=3.2",
+  "rapidfuzz>=3.9",
+  "scikit-learn>=1.5",
+  "numpy>=1.26",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

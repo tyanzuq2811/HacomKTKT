@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>So sánh ngang hàng hồ sơ dự thầu</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>So sánh ngang hàng các nhà thầu</h1>
+      <p>Đặt 2, 3 hoặc nhiều hồ sơ cạnh nhau · không lấy nhà thầu nào làm chuẩn</p>
+    </div>
+    <span class="privacy">Xử lý nội bộ</span>
+  </header>
+
+  <main class="container">
+    <section class="explain">
+      <h2>Hệ thống làm gì?</h2>
+      <div class="explain-grid">
+        <article><b>1. Ghép hạng mục</b><span>Tìm những dòng nói về cùng một hạng mục, dù cách viết có thể khác nhau.</span></article>
+        <article><b>2. Đặt cạnh nhau</b><span>So sánh giá, khối lượng, thành tiền, tên, đơn vị, vật tư và thông số.</span></article>
+        <article><b>3. Đánh dấu</b><span>Ghi rõ chênh bao nhiêu %, giá trị từng nhà thầu và lý do cần kiểm tra.</span></article>
+      </div>
+      <p class="important"><strong>Không có “nhà thầu chuẩn”.</strong> Thứ tự tải file không làm thay đổi công thức so sánh.</p>
+    </section>
+
+    <section class="panel">
+      <div class="step-title"><span>1</span><div><h2>Chọn các hồ sơ cần so sánh</h2><p>Mỗi nhà thầu một file Excel .xlsx.</p></div></div>
+      <div id="bidder-list" class="bidder-list"></div>
+      <button id="add-bidder" type="button" class="secondary">+ Thêm nhà thầu</button>
+    </section>
+
+    <section class="panel">
+      <div class="step-title"><span>2</span><div><h2>Chọn mức nhạy</h2><p>Có thể giữ nguyên giá trị gợi ý.</p></div></div>
+      <div class="threshold-grid">
+        <label>Giá bắt đầu cảnh báo<input id="price-warn" type="number" min="0" step="1" value="10"><small>%</small></label>
+        <label>Giá mức nghiêm trọng<input id="price-critical" type="number" min="0" step="1" value="25"><small>%</small></label>
+        <label>Khối lượng bắt đầu cảnh báo<input id="qty-warn" type="number" min="0" step="1" value="5"><small>%</small></label>
+        <label>Khối lượng mức nghiêm trọng<input id="qty-critical" type="number" min="0" step="1" value="15"><small>%</small></label>
+      </div>
+    </section>
+
+    <section class="panel action-panel">
+      <div class="step-title"><span>3</span><div><h2>Chạy so sánh và tải file tổng hợp</h2><p>Báo cáo sẽ có hạng mục đánh dấu, chi tiết %, ma trận giá và lý do.</p></div></div>
+      <button id="run" class="primary" type="button">Bắt đầu so sánh</button>
+      <div id="status" class="status hidden">
+        <div class="status-line"><strong id="status-text">Đang xử lý…</strong><span id="status-percent">0%</span></div>
+        <div class="progress"><div id="progress-bar"></div></div>
+      </div>
+      <div id="result" class="result hidden">
+        <h3>Kết quả tóm tắt</h3>
+        <div id="metrics" class="metrics"></div>
+        <a id="download" class="download" href="#">Tải báo cáo Excel</a>
+      </div>
+      <div id="error" class="error hidden"></div>
+    </section>
+  </main>
+
+  <template id="bidder-template">
+    <div class="bidder-row">
+      <span class="bidder-number"></span>
+      <label>Tên nhà thầu<input class="bidder-name" type="text" placeholder="Ví dụ: Nhà thầu A"></label>
+      <label>File Excel<input class="bidder-file" type="file" accept=".xlsx"></label>
+      <button type="button" class="remove" title="Xóa">×</button>
+    </div>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>
