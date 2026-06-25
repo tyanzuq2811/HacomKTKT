@@ -473,6 +473,43 @@ form.surface { padding: 20px 22px; }
   margin-bottom: 8px;
 }
 
+.upload-box.has-file .upload-icon {
+  display: none !important;
+}
+
+.remove-single-file {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #e0c6ca;
+  background: #ffffff;
+  color: #a46e74;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.upload-box.has-file .remove-single-file {
+  display: inline-flex;
+}
+
+.remove-single-file:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+  transform: scale(1.1);
+}
+
 .upload-box b { font-size: 14px; }
 .upload-box small { color: var(--muted); font-size: 11px; }
 .upload-box em {

@@ -434,7 +434,28 @@ async function checkHealth() {
 $$(".nav-item").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.mode)));
 [["#pl1", "#pl1Name"], ["#pl2", "#pl2Name"], ["#hsmt", "#hsmtName"]].forEach(([input, label]) => {
   const el = $(input);
-  if (el) el.addEventListener("change", () => updateSingleFile(input, label));
+  if (el) {
+    el.addEventListener("change", () => {
+      const file = el.files[0];
+      if (file && !file.name.toLowerCase().endsWith(".xlsx")) {
+        notify(`File '${file.name}' không đúng định dạng Excel. Hệ thống nhận file .xlsx. Hãy Save As file .xls/.xlsb thành .xlsx trước khi chạy.`, "error");
+        el.value = "";
+      }
+      updateSingleFile(input, label);
+    });
+  }
+});
+[["#removePl1", "#pl1", "#pl1Name"], ["#removePl2", "#pl2", "#pl2Name"], ["#removeHsmt", "#hsmt", "#hsmtName"]].forEach(([removeBtnId, inputId, labelId]) => {
+  const removeBtn = $(removeBtnId);
+  if (removeBtn) {
+    removeBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const input = $(inputId);
+      input.value = "";
+      updateSingleFile(inputId, labelId);
+    });
+  }
 });
 const bidderFilesEl = $("#bidderFiles");
 if (bidderFilesEl) {
@@ -443,6 +464,10 @@ if (bidderFilesEl) {
       bidderFiles.map((item) => `${item.file.name}|${item.file.size}|${item.file.lastModified}`)
     );
     [...event.target.files].forEach((file) => {
+      if (!file.name.toLowerCase().endsWith(".xlsx")) {
+        notify(`File '${file.name}' không đúng định dạng Excel. Hệ thống nhận file .xlsx. Hãy Save As file .xls/.xlsb thành .xlsx trước khi chạy.`, "error");
+        return;
+      }
       const key = `${file.name}|${file.size}|${file.lastModified}`;
       if (!existing.has(key)) {
         bidderFiles.push({file, name: file.name.replace(/\.xlsx$/i, "")});
@@ -455,7 +480,21 @@ if (bidderFilesEl) {
 }
 const ocrFilesEl = $("#ocrFiles");
 if (ocrFilesEl) {
-  ocrFilesEl.addEventListener("change", (event) => { ocrFiles = [...event.target.files]; renderOcrFiles(); });
+  ocrFilesEl.addEventListener("change", (event) => {
+    const allowedExtensions = [".pdf", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp", ".bmp"];
+    const validFiles = [];
+    [...event.target.files].forEach((file) => {
+      const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+      if (!allowedExtensions.includes(ext)) {
+        notify(`File '${file.name}' không được hỗ trợ để quét PDF/ảnh scan.`, "error");
+        return;
+      }
+      validFiles.push(file);
+    });
+    ocrFiles = validFiles;
+    event.target.value = "";
+    renderOcrFiles();
+  });
 }
 const workFormEl = $("#workForm");
 if (workFormEl) {
