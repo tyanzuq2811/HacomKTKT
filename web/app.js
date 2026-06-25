@@ -37,6 +37,7 @@ let ocrFiles = [];
 let pollTimer = null;
 let currentJobId = null;
 let toastTimer = null;
+let lastState = null;
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
@@ -51,25 +52,113 @@ function fileSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function setInputFiles(inputEl, fileListOrArray) {
+  if (!inputEl) return;
+  if (!fileListOrArray || fileListOrArray.length === 0) {
+    inputEl.value = "";
+    return;
+  }
+  const dt = new DataTransfer();
+  for (let i = 0; i < fileListOrArray.length; i++) {
+    const file = fileListOrArray[i].file || fileListOrArray[i];
+    dt.items.add(file);
+  }
+  inputEl.files = dt.files;
+}
+
+function undoReset() {
+  if (!lastState) return;
+  
+  if (lastState.mode) {
+    setMode(lastState.mode);
+  }
+  
+  if (lastState.pl1 && lastState.pl1.length > 0) {
+    setInputFiles($("#pl1"), lastState.pl1);
+  } else {
+    if ($("#pl1")) $("#pl1").value = "";
+  }
+  
+  if (lastState.pl2 && lastState.pl2.length > 0) {
+    setInputFiles($("#pl2"), lastState.pl2);
+  } else {
+    if ($("#pl2")) $("#pl2").value = "";
+  }
+  
+  if (lastState.hsmt && lastState.hsmt.length > 0) {
+    setInputFiles($("#hsmt"), lastState.hsmt);
+  } else {
+    if ($("#hsmt")) $("#hsmt").value = "";
+  }
+  
+  bidderFiles = lastState.bidderFiles ? [...lastState.bidderFiles] : [];
+  ocrFiles = lastState.ocrFiles ? [...lastState.ocrFiles] : [];
+  
+  if ($("#priceWarn") && lastState.priceWarn !== undefined) $("#priceWarn").value = lastState.priceWarn;
+  if ($("#priceCritical") && lastState.priceCritical !== undefined) $("#priceCritical").value = lastState.priceCritical;
+  if ($("#quantityWarn") && lastState.quantityWarn !== undefined) $("#quantityWarn").value = lastState.quantityWarn;
+  if ($("#quantityCritical") && lastState.quantityCritical !== undefined) $("#quantityCritical").value = lastState.quantityCritical;
+  
+  updateSingleFile("#pl1", "#pl1Name");
+  updateSingleFile("#pl2", "#pl2Name");
+  updateSingleFile("#hsmt", "#hsmtName");
+  renderBidderFiles();
+  renderOcrFiles();
+  updatePackageBehavior();
+  
+  lastState = null; // Clear state after undo
+  notify("Đã hoàn tác khôi phục trạng thái thành công.", "success");
+}
+
 function notify(message, type = "info") {
   const toast = $("#toast");
+  if (!toast) return;
+  
+  toast.onclick = null;
+  
   if (type === "error") {
     toast.innerHTML = `
-      <div class="toast-error-title"><span class="toast-error-icon">⚠️</span>CẢNH BÁO LỖI PHÂN TÍCH FILE</div>
+      <div class="toast-error-title">
+        <svg class="toast-error-svg" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#FFC107" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span>CẢNH BÁO LỖI PHÂN TÍCH FILE</span>
+      </div>
       <div class="toast-error-body">${escapeHtml(message)}</div>
       <button class="toast-error-close" type="button">Đóng</button>
     `;
+    const closeBtn = toast.querySelector(".toast-error-close");
+    if (closeBtn) {
+      closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        toast.className = "toast";
+      };
+    }
   } else {
-    toast.textContent = message;
+    // Normal toast, can support HTML text for undo link
+    toast.innerHTML = message;
+    const undoLink = toast.querySelector("#undoBtn");
+    if (undoLink) {
+      undoLink.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        undoReset();
+      };
+    }
   }
-  toast.className = `toast show${type === "error" ? " error" : ""}`;
+  
+  toast.className = `toast show${type === "error" ? " error" : ""}${type === "success" ? " success" : ""}`;
   clearTimeout(toastTimer);
   
-  toast.onclick = () => {
-    toast.className = "toast";
+  toast.onclick = (e) => {
+    if (e.target.id !== "undoBtn") {
+      toast.className = "toast";
+    }
   };
   
-  const duration = type === "error" ? 20000 : 3500;
+  const duration = type === "error" ? 20000 : (message.includes("undoBtn") ? 8000 : 3500);
   toastTimer = setTimeout(() => {
     toast.className = "toast";
   }, duration);
@@ -84,7 +173,8 @@ function setMode(nextMode) {
   $("#formTitle").textContent = copy.formTitle;
   $("#formHelp").textContent = copy.formHelp;
   $("#startButtonText").textContent = copy.button;
-  $("#bidderHint").textContent = copy.hint || "";
+  const bidderHint = $("#bidderHint");
+  if (bidderHint) bidderHint.textContent = copy.hint || "";
   $("#comparisonFields").classList.toggle("hidden", mode === "ocr");
   $("#ocrFields").classList.toggle("hidden", mode !== "ocr");
   $("#packageFields").classList.toggle("hidden", mode !== "package");
@@ -131,23 +221,85 @@ function updateSingleFile(inputId, labelId) {
 
 function renderBidderFiles() {
   const container = $("#bidderList");
+  const statusBadge = $("#bidderStatusBadge");
+  
+  if (!container) return;
+  
   if (!bidderFiles.length) {
-    container.className = "selected-list empty-state";
-    container.textContent = "Chưa có hồ sơ nhà thầu nào được chọn.";
+    container.className = "bidder-list-container empty-state";
+    container.innerHTML = `
+      <label class="bidder-list-upload-btn" for="bidderFiles" aria-label="Thêm file Excel">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+      </label>
+      <div class="bidder-list-empty-content">
+        <span class="folder-icon">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#D32F2F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </span>
+        <span class="empty-text">Chưa có hồ sơ nhà thầu nào được chọn</span>
+      </div>
+    `;
+    if (statusBadge) {
+      statusBadge.textContent = "Bắt buộc";
+      statusBadge.className = "required";
+    }
     updatePackageBehavior();
     return;
   }
-  container.className = "selected-list";
-  container.innerHTML = bidderFiles.map((item, index) => `
+  
+  container.className = "bidder-list-container";
+  
+  const filesHtml = bidderFiles.map((item, index) => `
     <div class="selected-file" data-index="${index}">
-      <div class="file-info"><b>${escapeHtml(item.file.name)}</b><small>${fileSize(item.file.size)}</small></div>
-      <input class="bidder-name" value="${escapeHtml(item.name)}" aria-label="Tên nhà thầu ${index + 1}">
-      <button class="remove-file" type="button" data-remove-bidder="${index}" aria-label="Bỏ file">×</button>
-    </div>`).join("");
-  $$(".bidder-name").forEach((input, index) => input.addEventListener("input", () => bidderFiles[index].name = input.value));
+      <div class="file-info"><b>${escapeHtml(item.file.name)}</b></div>
+      <div class="file-meta">
+        <span class="file-size">${fileSize(item.file.size)}</span>
+        <button class="remove-file" type="button" data-remove-bidder="${index}" aria-label="Bỏ file">×</button>
+      </div>
+    </div>
+  `).join("");
+  
+  container.innerHTML = `
+    <label class="bidder-list-upload-btn" for="bidderFiles" aria-label="Thêm file Excel">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="17 8 12 3 7 8"></polyline>
+        <line x1="12" y1="3" x2="12" y2="15"></line>
+      </svg>
+    </label>
+    <div class="bidder-list-files">
+      ${filesHtml}
+    </div>
+  `;
+  
+  if (statusBadge) {
+    statusBadge.textContent = `Đã chọn ${bidderFiles.length} file`;
+    statusBadge.className = "required success-badge";
+  }
+  
   $$('[data-remove-bidder]').forEach((button) => button.addEventListener("click", () => {
-    bidderFiles.splice(Number(button.dataset.removeBidder), 1);
-    renderBidderFiles();
+    const fileCard = button.closest(".selected-file");
+    const index = Number(button.dataset.removeBidder);
+    if (fileCard) {
+      fileCard.classList.add("removing");
+      let removed = false;
+      const removeAction = () => {
+        if (removed) return;
+        removed = true;
+        bidderFiles.splice(index, 1);
+        renderBidderFiles();
+      };
+      fileCard.addEventListener("transitionend", removeAction, { once: true });
+      setTimeout(removeAction, 310);
+    } else {
+      bidderFiles.splice(index, 1);
+      renderBidderFiles();
+    }
   }));
   updatePackageBehavior();
 }
@@ -162,18 +314,60 @@ function renderOcrFiles() {
   container.className = "selected-list";
   container.innerHTML = ocrFiles.map((file, index) => `
     <div class="selected-file" data-index="${index}">
-      <div class="file-info"><b>${escapeHtml(file.name)}</b><small>${fileSize(file.size)}</small></div>
-      <span></span>
-      <button class="remove-file" type="button" data-remove-ocr="${index}" aria-label="Bỏ file">×</button>
+      <div class="file-info"><b>${escapeHtml(file.name)}</b></div>
+      <div class="file-meta">
+        <span class="file-size">${fileSize(file.size)}</span>
+        <button class="remove-file" type="button" data-remove-ocr="${index}" aria-label="Bỏ file">×</button>
+      </div>
     </div>`).join("");
   $$('[data-remove-ocr]').forEach((button) => button.addEventListener("click", () => {
-    ocrFiles.splice(Number(button.dataset.removeOcr), 1);
-    renderOcrFiles();
+    const fileCard = button.closest(".selected-file");
+    const index = Number(button.dataset.removeOcr);
+    if (fileCard) {
+      fileCard.classList.add("removing");
+      let removed = false;
+      const removeAction = () => {
+        if (removed) return;
+        removed = true;
+        ocrFiles.splice(index, 1);
+        renderOcrFiles();
+      };
+      fileCard.addEventListener("transitionend", removeAction, { once: true });
+      setTimeout(removeAction, 310);
+    } else {
+      ocrFiles.splice(index, 1);
+      renderOcrFiles();
+    }
   }));
 }
 
 function resetFiles() {
-  ["#pl1", "#pl2", "#hsmt", "#bidderFiles", "#ocrFiles"].forEach((id) => { $(id).value = ""; });
+  const hasPl1 = $("#pl1") && $("#pl1").files && $("#pl1").files.length > 0;
+  const hasPl2 = $("#pl2") && $("#pl2").files && $("#pl2").files.length > 0;
+  const hasHsmt = $("#hsmt") && $("#hsmt").files && $("#hsmt").files.length > 0;
+  const hasBidders = bidderFiles.length > 0;
+  const hasOcr = ocrFiles.length > 0;
+  
+  if (hasPl1 || hasPl2 || hasHsmt || hasBidders || hasOcr) {
+    lastState = {
+      pl1: $("#pl1") ? $("#pl1").files : null,
+      pl2: $("#pl2") ? $("#pl2").files : null,
+      hsmt: $("#hsmt") ? $("#hsmt").files : null,
+      bidderFiles: [...bidderFiles],
+      ocrFiles: [...ocrFiles],
+      priceWarn: $("#priceWarn") ? $("#priceWarn").value : "",
+      priceCritical: $("#priceCritical") ? $("#priceCritical").value : "",
+      quantityWarn: $("#quantityWarn") ? $("#quantityWarn").value : "",
+      quantityCritical: $("#quantityCritical") ? $("#quantityCritical").value : "",
+      mode: mode
+    };
+  }
+
+  ["#pl1", "#pl2", "#hsmt", "#bidderFiles", "#ocrFiles"].forEach((id) => { 
+    const el = $(id);
+    if (el) el.value = ""; 
+  });
+  
   bidderFiles = [];
   ocrFiles = [];
   updateSingleFile("#pl1", "#pl1Name");
@@ -182,6 +376,10 @@ function resetFiles() {
   renderBidderFiles();
   renderOcrFiles();
   updatePackageBehavior();
+  
+  if (lastState) {
+    notify(`Đã xóa các lựa chọn. <a href="#" id="undoBtn" style="color: #FFC107; text-decoration: underline; font-weight: bold; margin-left: 8px;">Nhấp vào đây để hoàn tác</a>`);
+  }
 }
 
 function validateComparison() {
@@ -514,5 +712,6 @@ if (clearHistoryEl) {
 }
 
 setMode("package");
+renderBidderFiles();
 renderHistory();
 checkHealth();
