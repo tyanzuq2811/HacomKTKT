@@ -337,10 +337,15 @@ function renderResult(jobId, data) {
     return `<div class="document-card"><div class="document-card-head"><div><h4>${escapeHtml(doc.source)}</h4><p>${escapeHtml(doc.output || "")}</p></div></div><div class="document-stats"><span>${formatNumber(s.pages)} trang</span><span>${formatNumber(s.tables)} bảng</span><span>${formatNumber(s.rows)} dòng</span><span>${formatNumber(s.review_cells)} ô cần xem lại</span><span>Độ tin cậy ${formatNumber(Number(s.average_confidence || 0) * 100, 1)}%</span></div></div>`;
   }).join("") : "";
 
-  const warnings = data.warnings || [];
-  $("#warningsBlock").classList.toggle("hidden", !warnings.length);
-  $("#warningCount").textContent = warnings.length ? `${warnings.length} cảnh báo` : "";
-  $("#warnings").innerHTML = warnings.slice(0, 100).map((warning) => `<div class="warning-item">${escapeHtml(warning)}</div>`).join("");
+  const warningsBlock = $("#warningsBlock");
+  if (warningsBlock) {
+    const warnings = data.warnings || [];
+    warningsBlock.classList.toggle("hidden", !warnings.length);
+    const warningCount = $("#warningCount");
+    if (warningCount) warningCount.textContent = warnings.length ? `${warnings.length} cảnh báo` : "";
+    const warningsEl = $("#warnings");
+    if (warningsEl) warningsEl.innerHTML = warnings.slice(0, 100).map((warning) => `<div class="warning-item">${escapeHtml(warning)}</div>`).join("");
+  }
 
   const anomalies = data.anomalies || [];
   $("#anomalyBlock").classList.toggle("hidden", !anomalies.length);
