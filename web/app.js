@@ -374,6 +374,7 @@ function updateRecentJob(id, state) {
 
 function renderHistory() {
   const container = $("#recentJobs");
+  if (!container) return;
   const history = getHistory();
   if (!history.length) {
     container.className = "recent-jobs empty-state";
@@ -409,39 +410,64 @@ async function checkHealth() {
     const response = await fetch("/api/health", {cache: "no-store"});
     const data = await response.json();
     if (!response.ok) throw new Error();
-    $("#healthDot").classList.add("online");
-    $("#sidebarStatusDot").classList.add("online");
+    const healthDot = $("#healthDot");
+    const sidebarStatusDot = $("#sidebarStatusDot");
+    if (healthDot) healthDot.classList.add("online");
+    if (sidebarStatusDot) sidebarStatusDot.classList.add("online");
   } catch {
-    $("#healthDot").classList.add("offline");
-    $("#sidebarStatusDot").classList.add("offline");
-    $("#healthText").textContent = "Không kết nối được";
-    $("#sidebarStatus").textContent = "Mất kết nối";
+    const healthDot = $("#healthDot");
+    const sidebarStatusDot = $("#sidebarStatusDot");
+    const healthText = $("#healthText");
+    const sidebarStatus = $("#sidebarStatus");
+    if (healthDot) healthDot.classList.add("offline");
+    if (sidebarStatusDot) sidebarStatusDot.classList.add("offline");
+    if (healthText) healthText.textContent = "Không kết nối được";
+    if (sidebarStatus) sidebarStatus.textContent = "Mất kết nối";
   }
 }
 
 $$(".nav-item").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.mode)));
-[["#pl1", "#pl1Name"], ["#pl2", "#pl2Name"], ["#hsmt", "#hsmtName"]].forEach(([input, label]) => $(input).addEventListener("change", () => updateSingleFile(input, label)));
-$("#bidderFiles").addEventListener("change", (event) => {
-  const existing = new Set(
-    bidderFiles.map((item) => `${item.file.name}|${item.file.size}|${item.file.lastModified}`)
-  );
-  [...event.target.files].forEach((file) => {
-    const key = `${file.name}|${file.size}|${file.lastModified}`;
-    if (!existing.has(key)) {
-      bidderFiles.push({file, name: file.name.replace(/\.xlsx$/i, "")});
-      existing.add(key);
-    }
-  });
-  // Clear the native input so the same picker can be used repeatedly to add
-  // one file at a time without replacing the files already listed.
-  event.target.value = "";
-  renderBidderFiles();
+[["#pl1", "#pl1Name"], ["#pl2", "#pl2Name"], ["#hsmt", "#hsmtName"]].forEach(([input, label]) => {
+  const el = $(input);
+  if (el) el.addEventListener("change", () => updateSingleFile(input, label));
 });
-$("#ocrFiles").addEventListener("change", (event) => { ocrFiles = [...event.target.files]; renderOcrFiles(); });
-$("#workForm").addEventListener("submit", submitWork);
-$("#resetButton").addEventListener("click", resetFiles);
-$("#newTaskButton").addEventListener("click", () => { resetFiles(); $("#resultPanel").classList.add("hidden"); window.scrollTo({top: 0, behavior: "smooth"}); });
-$("#clearHistory").addEventListener("click", () => setHistory([]));
+const bidderFilesEl = $("#bidderFiles");
+if (bidderFilesEl) {
+  bidderFilesEl.addEventListener("change", (event) => {
+    const existing = new Set(
+      bidderFiles.map((item) => `${item.file.name}|${item.file.size}|${item.file.lastModified}`)
+    );
+    [...event.target.files].forEach((file) => {
+      const key = `${file.name}|${file.size}|${file.lastModified}`;
+      if (!existing.has(key)) {
+        bidderFiles.push({file, name: file.name.replace(/\.xlsx$/i, "")});
+        existing.add(key);
+      }
+    });
+    event.target.value = "";
+    renderBidderFiles();
+  });
+}
+const ocrFilesEl = $("#ocrFiles");
+if (ocrFilesEl) {
+  ocrFilesEl.addEventListener("change", (event) => { ocrFiles = [...event.target.files]; renderOcrFiles(); });
+}
+const workFormEl = $("#workForm");
+if (workFormEl) {
+  workFormEl.addEventListener("submit", submitWork);
+}
+const resetButtonEl = $("#resetButton");
+if (resetButtonEl) {
+  resetButtonEl.addEventListener("click", resetFiles);
+}
+const newTaskButtonEl = $("#newTaskButton");
+if (newTaskButtonEl) {
+  newTaskButtonEl.addEventListener("click", () => { resetFiles(); $("#resultPanel").classList.add("hidden"); window.scrollTo({top: 0, behavior: "smooth"}); });
+}
+const clearHistoryEl = $("#clearHistory");
+if (clearHistoryEl) {
+  clearHistoryEl.addEventListener("click", () => setHistory([]));
+}
 
 setMode("package");
 renderHistory();
