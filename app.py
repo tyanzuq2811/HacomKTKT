@@ -176,6 +176,65 @@ def _result_preview(result, files: dict[str, Any] | None = None) -> dict[str, An
     }
 
 
+
+def format_job_error_message(exc: Exception, request: dict[str, Any] | None) -> str:
+    exc_str = str(exc)
+    exc_type = type(exc).__name__
+    
+    file_match = re.search(r"Không đọc được file '([^']+)'", exc_str)
+    if file_match:
+        target_filename = file_match.group(1)
+        original_filename = target_filename
+        
+        if request:
+            if target_filename == request.get("pl1_file"):
+                original_filename = request.get("pl1_original") or "Phụ lục 01"
+            elif target_filename == request.get("pl2_file"):
+                original_filename = request.get("pl2_original") or "Phụ lục 02"
+            elif target_filename == request.get("hsmt_file"):
+                original_filename = request.get("hsmt_original") or "HSMT"
+            else:
+                for entry in request.get("bidders", []):
+                    if entry.get("file") == target_filename:
+                        original_filename = entry.get("original_name") or entry.get("name") or target_filename
+                        break
+        
+        if original_filename == target_filename:
+            original_filename = re.sub(r'^\d{3}_', '', original_filename)
+            
+        underlying_type = ""
+        underlying_message = ""
+        underlying_match = re.search(r"Không đọc được file '[^']+' \([^)]+\):\s*([^:]+):\s*(.*)", exc_str)
+        if underlying_match:
+            underlying_type = underlying_match.group(1).strip()
+            underlying_message = underlying_match.group(2).strip()
+        else:
+            cause = exc.__cause__ or exc.__context__
+            if cause:
+                underlying_type = type(cause).__name__
+                underlying_message = str(cause)
+                
+        if not underlying_type:
+            underlying_type = exc_type
+            underlying_message = exc_str
+            
+        if "xlsx" in underlying_message.lower() and ("valueerror" in underlying_type.lower() or "invalidfileexception" in underlying_type.lower()):
+            return f"File '{original_filename}' không đúng định dạng Excel. Hệ thống nhận file .xlsx. Hãy Save As file .xls/.xlsb thành .xlsx trước khi chạy."
+            
+        if "badzipfile" in underlying_type.lower() or "zipfile.badzipfile" in underlying_type.lower() or "not a zip" in underlying_message.lower():
+            return f"File '{original_filename}' không phải là file Excel."
+            
+        if underlying_type in {"AttributeError", "TypeError", "NameError", "KeyError", "IndexError", "ZeroDivisionError", "UnboundLocalError"}:
+            return "lỗi file"
+            
+        return f"File '{original_filename}' không đúng định dạng Excel."
+
+    if exc_type in {"AttributeError", "TypeError", "NameError", "KeyError", "IndexError", "ZeroDivisionError", "UnboundLocalError"}:
+        return "lỗi file"
+        
+    return "lỗi file"
+
+
 def _run_job(job_id: str, mode: str, request: dict[str, Any]) -> None:
     folder = _job_dir(job_id)
     started = time.perf_counter()
@@ -315,11 +374,12 @@ def _run_job(job_id: str, mode: str, request: dict[str, Any]) -> None:
             **extra_status,
         )
     except Exception as exc:
+        friendly_message = format_job_error_message(exc, request)
         _update(
             job_id,
             state="failed",
             progress=100,
-            message=f"{type(exc).__name__}: {exc}",
+            message=friendly_message,
             error_type=type(exc).__name__,
         )
 
@@ -451,14 +511,20 @@ async def compare_package_api(
             original = _sanitize(upload.filename or "", f"bidder_{index}.xlsx")
             target = folder / f"{index:03d}_{original}"
             await _save_upload(upload, target, limit)
-            entries.append({"name": name.strip() or Path(original).stem, "file": target.name})
+            entries.append({
+                "name": name.strip() or Path(original).stem,
+                "file": target.name,
+                "original_name": upload.filename or original
+            })
     except Exception:
         shutil.rmtree(folder, ignore_errors=True)
         raise
 
     request = {
         "pl1_file": pl1_target.name if pl1_target else "",
+        "pl1_original": pl1.filename if pl1 else "",
         "pl2_file": pl2_target.name if pl2_target else "",
+        "pl2_original": pl2.filename if pl2 else "",
         "bidders": entries,
         "price_warn_pct": price_warn_pct,
         "price_critical_pct": price_critical_pct,
@@ -489,7 +555,11 @@ async def compare_bidders_api(
             original = _sanitize(upload.filename or "", f"bidder_{index}.xlsx")
             target = folder / f"{index:03d}_{original}"
             await _save_upload(upload, target, limit)
-            entries.append({"name": name.strip() or Path(original).stem, "file": target.name})
+            entries.append({
+                "name": name.strip() or Path(original).stem,
+                "file": target.name,
+                "original_name": upload.filename or original
+            })
     except Exception:
         shutil.rmtree(folder, ignore_errors=True)
         raise
@@ -527,12 +597,17 @@ async def compare_tender_api(
             original = _sanitize(upload.filename or "", f"bidder_{index}.xlsx")
             target = folder / f"{index:03d}_{original}"
             await _save_upload(upload, target, limit)
-            entries.append({"name": name.strip() or Path(original).stem, "file": target.name})
+            entries.append({
+                "name": name.strip() or Path(original).stem,
+                "file": target.name,
+                "original_name": upload.filename or original
+            })
     except Exception:
         shutil.rmtree(folder, ignore_errors=True)
         raise
     request = {
         "hsmt_file": hsmt_target.name,
+        "hsmt_original": hsmt.filename,
         "bidders": entries,
         "price_warn_pct": price_warn_pct,
         "price_critical_pct": price_critical_pct,

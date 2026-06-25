@@ -114,7 +114,7 @@ def _prepare_review_sheet(wb, bidder: str):
     for index, (severity, meaning) in enumerate(legend, 5):
         summary.cell(index, 1, severity.value)
         summary.cell(index, 1).fill = _FILL[severity]
-        summary.cell(index, 1).font = Font(bold=True, color=_FONT[severity])
+        summary.cell(index, 1).font = Font(name="Arial", bold=True, color=_FONT[severity])
         summary.cell(index, 2, meaning)
     summary["A10"] = "Lưu ý"
     summary["B10"] = (
@@ -125,7 +125,7 @@ def _prepare_review_sheet(wb, bidder: str):
     summary.column_dimensions["A"].width = 25
     summary.column_dimensions["B"].width = 95
     summary.merge_cells("A1:H1")
-    summary["A1"].font = Font(bold=True, size=16, color="FFFFFF")
+    summary["A1"].font = Font(name="Arial", bold=True, size=16, color="FFFFFF")
     summary["A1"].fill = PatternFill("solid", fgColor="17365D")
     summary["A1"].alignment = Alignment(horizontal="center")
 
@@ -137,7 +137,7 @@ def _prepare_review_sheet(wb, bidder: str):
     for col, header in enumerate(headers, 1):
         cell = review.cell(1, col, header)
         cell.fill = PatternFill("solid", fgColor="1F4E78")
-        cell.font = Font(bold=True, color="FFFFFF")
+        cell.font = Font(name="Arial", bold=True, color="FFFFFF")
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell.border = Border(bottom=_THIN)
     widths = [18, 24, 12, 14, 48, 48, 30, 35, 35, 18, 18, 80, 22]
@@ -212,7 +212,7 @@ def annotate_bidder_workbook(
                 cell.alignment = Alignment(vertical="top", wrap_text=col in {5, 6, 7, 8, 9, 12})
                 if col == 1:
                     cell.fill = _FILL.get(compared.severity, PatternFill())
-                    cell.font = Font(bold=True, color=_FONT.get(compared.severity, "000000"))
+                    cell.font = Font(name="Arial", bold=True, color=_FONT.get(compared.severity, "000000"))
                 if col == 11 and isinstance(value, (int, float)):
                     cell.number_format = "0.00%"
                 if col == 10 and isinstance(value, (int, float)):
@@ -244,7 +244,7 @@ def annotate_bidder_workbook(
                 cell.alignment = Alignment(vertical="top", wrap_text=col in {7, 8, 9, 12})
                 if col == 1:
                     cell.fill = _FILL[severity]
-                    cell.font = Font(bold=True, color=_FONT[severity])
+                    cell.font = Font(name="Arial", bold=True, color=_FONT[severity])
             if sheet_name and cell_ref and sheet_name in wb.sheetnames:
                 escaped = sheet_name.replace("'", "''")
                 review_ws.cell(review_row, 13).hyperlink = f"#'{escaped}'!{cell_ref}"
@@ -281,7 +281,7 @@ def annotate_bidder_workbook(
             ws.cell(header_row, ai_note_col, "AI GHI CHÚ")
             for col in (ai_sev_col, ai_reason_col, ai_note_col):
                 ws.cell(header_row, col).fill = PatternFill("solid", fgColor="17365D")
-                ws.cell(header_row, col).font = Font(bold=True, color="FFFFFF")
+                ws.cell(header_row, col).font = Font(name="Arial", bold=True, color="FFFFFF")
                 ws.cell(header_row, col).alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             ws.column_dimensions[get_column_letter(ai_sev_col)].width = 18
             ws.column_dimensions[get_column_letter(ai_reason_col)].width = 80
@@ -314,14 +314,14 @@ def annotate_bidder_workbook(
             ws.cell(row_number, ai_reason_col, reason_text)
             for col in (ai_sev_col, ai_reason_col):
                 ws.cell(row_number, col).fill = _FILL.get(severity, PatternFill())
-                ws.cell(row_number, col).font = Font(color=_FONT.get(severity, "000000"), bold=col == ai_sev_col)
+                ws.cell(row_number, col).font = Font(name="Arial", color=_FONT.get(severity, "000000"), bold=col == ai_sev_col)
                 ws.cell(row_number, col).alignment = Alignment(vertical="top", wrap_text=True)
 
             item_col = fields.get("item_name", 2 if ws.max_column >= 2 else 1)
             anchor = ws.cell(row_number, item_col)
             anchor.fill = _FILL.get(severity, PatternFill())
             anchor.font = Font(
-                name=anchor.font.name, size=anchor.font.sz, bold=True, italic=anchor.font.italic,
+                name="Arial", size=anchor.font.sz, bold=True, italic=anchor.font.italic,
                 color=_FONT.get(severity, "000000"), underline=anchor.font.underline,
             )
 
@@ -347,7 +347,7 @@ def annotate_bidder_workbook(
             target = ws[cell_ref]
             target.fill = _FILL[severity]
             target.font = Font(
-                name=target.font.name, size=target.font.sz, bold=True,
+                name="Arial", size=target.font.sz, bold=True,
                 italic=target.font.italic, color=_FONT[severity], underline=target.font.underline,
             )
             _append_comment(target, message)
@@ -361,7 +361,7 @@ def annotate_bidder_workbook(
                 ws.cell(row_number, ai_reason_col, combined)
                 for col in (ai_sev_col, ai_reason_col):
                     ws.cell(row_number, col).fill = _FILL[severity]
-                    ws.cell(row_number, col).font = Font(color=_FONT[severity], bold=col == ai_sev_col)
+                    ws.cell(row_number, col).font = Font(name="Arial", color=_FONT[severity], bold=col == ai_sev_col)
                     ws.cell(row_number, col).alignment = Alignment(vertical="top", wrap_text=True)
 
         review_ws.auto_filter.ref = f"A1:M{max(1, review_row - 1)}"

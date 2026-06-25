@@ -187,7 +187,16 @@ def compare_appendices_with_bidders(
     # with that group because it has a different schema.
     with ThreadPoolExecutor(max_workers=2, thread_name_prefix="package-read") as executor:
         workbook_future = executor.submit(load_workbooks_parallel, specs, config)
-        pl2_future = executor.submit(load_pl2_requirements, pl2, config=config) if pl2 else None
+        
+        def load_pl2():
+            try:
+                return load_pl2_requirements(pl2, config=config)
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Không đọc được file '{pl2.name}' (PHỤ LỤC 02): {type(exc).__name__}: {exc}"
+                ) from exc
+
+        pl2_future = executor.submit(load_pl2) if pl2 else None
         loaded = workbook_future.result()
         requirements, pl2_warnings = pl2_future.result() if pl2_future else ([], [])
 
