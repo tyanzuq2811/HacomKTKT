@@ -55,9 +55,9 @@ function notify(message, type = "info") {
   const toast = $("#toast");
   if (type === "error") {
     toast.innerHTML = `
-      <div class="toast-error-title">⚠️ CẢNH BÁO LỖI PHÂN TÍCH FILE</div>
+      <div class="toast-error-title">CẢNH BÁO LỖI PHÂN TÍCH FILE</div>
       <div class="toast-error-body">${escapeHtml(message)}</div>
-      <div class="toast-error-close">[ Nhấp chuột vào đây để đóng thông báo ]</div>
+      <div class="toast-error-close">Đóng</div>
     `;
   } else {
     toast.textContent = message;
@@ -438,7 +438,7 @@ $$(".nav-item").forEach((button) => button.addEventListener("click", () => setMo
     el.addEventListener("change", () => {
       const file = el.files[0];
       if (file && !file.name.toLowerCase().endsWith(".xlsx")) {
-        notify(`File '${file.name}' không đúng định dạng Excel. Hệ thống nhận file .xlsx. Hãy Save As file .xls/.xlsb thành .xlsx trước khi chạy.`, "error");
+        notify("Không đúng định dạng.", "error");
         el.value = "";
       }
       updateSingleFile(input, label);
@@ -465,7 +465,7 @@ if (bidderFilesEl) {
     );
     [...event.target.files].forEach((file) => {
       if (!file.name.toLowerCase().endsWith(".xlsx")) {
-        notify(`File '${file.name}' không đúng định dạng Excel. Hệ thống nhận file .xlsx. Hãy Save As file .xls/.xlsb thành .xlsx trước khi chạy.`, "error");
+        notify("Không đúng định dạng.", "error");
         return;
       }
       const key = `${file.name}|${file.size}|${file.lastModified}`;
@@ -486,7 +486,7 @@ if (ocrFilesEl) {
     [...event.target.files].forEach((file) => {
       const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
       if (!allowedExtensions.includes(ext)) {
-        notify(`File '${file.name}' không được hỗ trợ để quét PDF/ảnh scan.`, "error");
+        notify("Không đúng định dạng.", "error");
         return;
       }
       validFiles.push(file);
