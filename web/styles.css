@@ -47,6 +47,24 @@ body {
   font-family: Inter, "Segoe UI", Arial, sans-serif;
   font-size: 14px;
   line-height: 1.6;
+  opacity: 0;
+  animation: fadeInBody 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeInBody {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUpContent {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 button, input, select { font: inherit; }
@@ -389,6 +407,12 @@ button, input, select { font: inherit; }
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.04), 0 16px 32px rgba(0,0,0,0.06);
+  transition: box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideUpContent 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.surface:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 form.surface { padding: 24px 28px; }
@@ -477,6 +501,7 @@ form.surface { padding: 24px 28px; }
   text-align: center;
   cursor: pointer;
   transition: all .25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideUpContent 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .upload-box:hover,
@@ -504,7 +529,7 @@ form.surface { padding: 24px 28px; }
   display: grid;
   place-items: center;
   margin-bottom: 12px;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .upload-icon svg {
@@ -516,7 +541,8 @@ form.surface { padding: 24px 28px; }
   background: #FFF5F5;
   color: #F44336;
   border-color: rgba(244, 67, 54, 0.3);
-  transform: scale(1.05);
+  transform: translateY(-2px) scale(1.05);
+  filter: brightness(1.06);
 }
 
 .upload-box.has-file .upload-icon {
@@ -720,7 +746,8 @@ form.surface { padding: 24px 28px; }
 .bidder-list-container:not(.empty-state) .bidder-list-upload-btn:hover {
   background: #FFF0F0;
   box-shadow: 0 4px 12px rgba(244, 67, 54, 0.18), 0 0 0 3px rgba(244, 67, 54, 0.08);
-  transform: scale(1.08);
+  transform: translateY(-2px) scale(1.05);
+  filter: brightness(1.06);
 }
 
 /* Empty content centered */
@@ -753,7 +780,8 @@ form.surface { padding: 24px 28px; }
   background: #FFF5F5;
   color: #F44336;
   border-color: rgba(244, 67, 54, 0.3);
-  transform: scale(1.05);
+  transform: translateY(-2px) scale(1.05);
+  filter: brightness(1.06);
 }
 
 .bidder-list-empty-content .empty-text {
@@ -782,6 +810,7 @@ form.surface { padding: 24px 28px; }
 
 .bidder-list-files .selected-file {
   position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -794,13 +823,18 @@ form.surface { padding: 24px 28px; }
   box-shadow: none;
   gap: 8px;
   min-height: 120px;
-  animation: selectedFileFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fileSlideLeft 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .bidder-list-files .selected-file:hover {
   border-color: #F44336;
+  background-color: #FFF5F5;
   box-shadow: 0 4px 12px rgba(244, 67, 54, 0.08);
+}
+
+.bidder-list-files .selected-file .file-name {
+  display: inline-block !important;
 }
 
 .bidder-list-files .selected-file .remove-single-file {
@@ -838,6 +872,8 @@ form.surface { padding: 24px 28px; }
 }
 
 .selected-file {
+  position: relative;
+  overflow: hidden;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -847,18 +883,19 @@ form.surface { padding: 24px 28px; }
   background: #ffffff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
   gap: 16px;
-  animation: selectedFileFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fileSlideLeft 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes selectedFileFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes fileSlideLeft {
+  from { opacity: 0; transform: translateX(15px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .selected-file.removing {
   opacity: 0;
-  transform: scale(0.95) translateY(-4px);
+  transform: translateX(-15px);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .selected-file .file-info {
@@ -986,7 +1023,21 @@ form.surface { padding: 24px 28px; }
   padding: 9px 24px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              filter 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: scale(1.03);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 80ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .button.primary {
@@ -995,7 +1046,11 @@ form.surface { padding: 24px 28px; }
   min-width: 185px;
   border-radius: 30px;
   box-shadow: 0 4px 15px rgba(211, 47, 47, 0.25), 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              filter 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
@@ -1016,9 +1071,10 @@ form.surface { padding: 24px 28px; }
   transition: left 0.8s ease-in-out;
 }
 
-.button.primary:hover {
-  transform: translateY(-2px);
+.button.primary:hover:not(:disabled) {
+  transform: scale(1.03);
   box-shadow: 0 8px 24px rgba(211, 47, 47, 0.35), 0 2px 6px rgba(0, 0, 0, 0.15);
+  filter: brightness(1.06);
 }
 
 .button.ghost {
@@ -1026,13 +1082,18 @@ form.surface { padding: 24px 28px; }
   color: #D32F2F;
   border: 1px solid #D32F2F;
   border-radius: 30px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              filter 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.button.ghost:hover {
-  background: #FFF5F5;
-  color: #B71C1C;
-  border-color: #B71C1C;
-  transform: translateY(-1px);
+.button.ghost:hover:not(:disabled) {
+  background: #FFEBEE;
+  color: #D32F2F;
+  border-color: #D32F2F;
+  transform: scale(1.03);
+  filter: brightness(1.06);
 }
 .button.small { padding: 8px 11px; font-size: 11px; }
 .button:disabled {
@@ -1383,7 +1444,7 @@ tbody tr:hover { background: #fff8f8; }
   text-align: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 2000;
   display: flex;
   flex-direction: column;
@@ -1424,7 +1485,11 @@ tbody tr:hover { background: #fff8f8; }
   border-radius: 24px;
   padding: 10px 24px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              filter 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
   display: inline-flex;
   align-items: center;
@@ -1436,12 +1501,14 @@ tbody tr:hover { background: #fff8f8; }
   background: #F44336;
   color: #FFFFFF;
   border-color: #F44336;
-  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.2);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(244, 67, 54, 0.35);
+  transform: scale(1.03);
+  filter: brightness(1.06);
 }
 
 .toast-error-close:active {
-  transform: translateY(0);
+  transform: scale(0.97);
+  transition: transform 80ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Backdrop blur overlay when error modal is active */
@@ -1490,6 +1557,7 @@ body:has(#toast.error.show)::before {
     border: 2px solid #D32F2F;
     border-radius: 12px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .toast.error.show {
     transform: translate(-50%, -50%) scale(1);
@@ -1684,4 +1752,105 @@ body:has(#toast.error.show)::before {
   .file-picker small {
     text-align: left;
   }
+}
+
+/* --- CUSTOM MICRO-INTERACTIONS AND ANIMATIONS --- */
+
+/* Scroll behavior for long file lists */
+.bidder-list-container,
+.selected-list,
+.table-wrap {
+  scroll-behavior: smooth;
+}
+
+/* Label status fade-in */
+@keyframes labelFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.upload-badge,
+.required {
+  animation: labelFadeIn 0.2s ease-in-out forwards;
+}
+
+/* Underline sweep effect for file names */
+.upload-box em,
+.selected-file b,
+.selected-file .file-name,
+.selected-file .file-info b {
+  position: relative;
+}
+
+.upload-box em::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 6px;
+  height: 1px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: bottom left;
+  transition: transform 0.25s ease-out;
+}
+.upload-box:hover em::after {
+  transform: scaleX(1);
+}
+
+.selected-file b::after,
+.selected-file .file-name::after,
+.selected-file .file-info b::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: bottom left;
+  transition: transform 0.25s ease-out;
+}
+.selected-file:hover b::after,
+.selected-file:hover .file-name::after,
+.selected-file:hover .file-info b::after {
+  transform: scaleX(1);
+}
+
+.selected-file .file-info b {
+  display: inline-block;
+}
+
+/* Diagonal shine sweep effect on hover */
+.selected-file::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(244, 67, 54, 0.08), transparent);
+  transform: skewX(-25deg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.selected-file:hover::after {
+  left: 150%;
+  transition: left 0.6s ease-in-out;
+}
+
+/* Icon click shake animation */
+@keyframes iconClickShake {
+  0% { transform: translateY(-2px) rotate(0deg); }
+  25% { transform: translateY(-2px) translateX(-2px) rotate(-4deg); }
+  50% { transform: translateY(-2px) translateX(2px) rotate(4deg); }
+  75% { transform: translateY(-2px) translateX(-1px) rotate(-2deg); }
+  100% { transform: translateY(-2px) rotate(0deg); }
+}
+
+.upload-box:active .upload-icon,
+.bidder-list-empty-upload-icon-wrapper:active .upload-icon,
+.bidder-list-upload-btn:active {
+  animation: iconClickShake 120ms ease-in-out 1;
 }
