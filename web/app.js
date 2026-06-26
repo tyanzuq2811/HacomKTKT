@@ -270,10 +270,14 @@ function renderBidderFiles() {
   
   const filesHtml = bidderFiles.map((item, index) => `
     <div class="selected-file" data-index="${index}">
-      <button class="remove-single-file" type="button" data-remove-bidder="${index}" aria-label="Xóa file">×</button>
-      <span class="upload-badge success-badge" style="background: #4CAF50; color: #FFFFFF; display: inline-block;">ĐÃ TẢI LÊN</span>
-      <b class="file-name" style="color: #333333; font-weight: bold; font-size: 14px; margin-bottom: 4px; display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(item.file.name)}</b>
-      <span class="file-size" style="color: #757575; font-size: 11px;">${fileSize(item.file.size)}</span>
+      <div class="selected-file-left">
+        <span class="upload-badge success-badge">ĐÃ TẢI LÊN</span>
+        <b class="file-name" title="${escapeHtml(item.file.name)}">${escapeHtml(item.file.name)}</b>
+      </div>
+      <div class="selected-file-right">
+        <span class="file-size">${fileSize(item.file.size)}</span>
+        <button class="remove-single-file" type="button" data-remove-bidder="${index}" aria-label="Xóa file">×</button>
+      </div>
     </div>
   `).join("");
   
@@ -285,9 +289,7 @@ function renderBidderFiles() {
         <line x1="12" y1="3" x2="12" y2="15"></line>
       </svg>
     </label>
-    <div class="bidder-list-files">
-      ${filesHtml}
-    </div>
+    ${filesHtml}
   `;
   
   if (statusBadge) {

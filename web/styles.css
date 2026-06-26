@@ -711,6 +711,12 @@ form.surface { padding: 24px 28px; }
 
 .bidder-list-container:not(.empty-state) {
   background: #FFF5F5;
+  padding-top: 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 
 .bidder-list-container:not(.empty-state):hover {
@@ -750,7 +756,7 @@ form.surface { padding: 24px 28px; }
   border: 1px solid rgba(244, 67, 54, 0.15);
   background: #FFF5F5;
   box-shadow: 0 2px 8px rgba(244, 67, 54, 0.06);
-  right: 42px;
+  right: 12px;
 }
 
 .bidder-list-container:not(.empty-state) .bidder-list-upload-btn:hover {
@@ -800,58 +806,75 @@ form.surface { padding: 24px 28px; }
   color: #757575;
 }
 
-/* Files List Wrapper */
-.bidder-list-files {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-  align-items: stretch;
-}
 
-.bidder-list-files:has(> .selected-file:first-child:last-child) {
-  align-items: center;
-}
-
-.bidder-list-files:has(> .selected-file:first-child:last-child) > .selected-file {
-  width: 100%;
-  max-width: 550px;
-}
-
-.bidder-list-files .selected-file {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 16px;
+/* Custom Row-based Bidder selected files */
+.bidder-list-container .selected-file {
   border: none;
   background: transparent;
   box-shadow: none;
-  gap: 8px;
-  min-height: 100px;
-  animation: fileSlideLeft 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 12px 0;
+  border-radius: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  min-height: 0;
 }
 
-.bidder-list-files .selected-file:hover {
+.bidder-list-container .selected-file:hover {
+  background: transparent;
   border-color: transparent;
-  background-color: transparent;
   box-shadow: none;
 }
 
-.bidder-list-files .selected-file:not(:first-child) {
+.bidder-list-container .selected-file:not(:first-of-type) {
   border-top: 1px dashed rgba(211, 47, 47, 0.15);
-  padding-top: 20px;
+  padding-top: 16px;
 }
 
-.bidder-list-files .selected-file .file-name {
-  display: inline-block !important;
+/* Row-based inner items formatting */
+.selected-file-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
 }
 
-.bidder-list-files .selected-file .remove-single-file {
+.selected-file-left .file-name {
+  color: #333333;
+  font-weight: 700;
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-file-left .success-badge {
+  background: #4CAF50 !important;
+  color: #FFFFFF !important;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.selected-file-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.selected-file-right .remove-single-file {
+  position: static;
   display: inline-flex;
 }
 
