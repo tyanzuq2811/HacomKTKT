@@ -1774,10 +1774,7 @@ body:has(#toast.error.show)::before {
 }
 
 /* Underline sweep effect for file names */
-.upload-box em,
-.selected-file b,
-.selected-file .file-name,
-.selected-file .file-info b {
+.upload-box em {
   position: relative;
 }
 
@@ -1797,24 +1794,10 @@ body:has(#toast.error.show)::before {
   transform: scaleX(1);
 }
 
-.selected-file b::after,
-.selected-file .file-name::after,
-.selected-file .file-info b::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -2px;
-  height: 1px;
-  background-color: currentColor;
-  transform: scaleX(0);
-  transform-origin: bottom left;
-  transition: transform 0.25s ease-out;
-}
-.selected-file:hover b::after,
-.selected-file:hover .file-name::after,
-.selected-file:hover .file-info b::after {
-  transform: scaleX(1);
+.selected-file:hover b,
+.selected-file:hover .file-name,
+.selected-file:hover .file-info b {
+  text-decoration: none !important;
 }
 
 .selected-file .file-info b {
