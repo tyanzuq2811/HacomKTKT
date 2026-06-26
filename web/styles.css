@@ -709,6 +709,15 @@ form.surface { padding: 24px 28px; }
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.bidder-list-container:not(.empty-state) {
+  background: #FFF5F5;
+}
+
+.bidder-list-container:not(.empty-state):hover {
+  border-color: #F44336;
+  box-shadow: 0 8px 24px rgba(244, 67, 54, 0.08);
+}
+
 .bidder-list-upload-btn {
   position: absolute;
   top: 12px;
@@ -741,6 +750,7 @@ form.surface { padding: 24px 28px; }
   border: 1px solid rgba(244, 67, 54, 0.15);
   background: #FFF5F5;
   box-shadow: 0 2px 8px rgba(244, 67, 54, 0.06);
+  right: 42px;
 }
 
 .bidder-list-container:not(.empty-state) .bidder-list-upload-btn:hover {
@@ -816,21 +826,25 @@ form.surface { padding: 24px 28px; }
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 20px;
-  border: 1px solid #FFCDD2;
-  border-radius: 10px;
-  background: #FFF5F5;
+  padding: 16px;
+  border: none;
+  background: transparent;
   box-shadow: none;
   gap: 8px;
-  min-height: 120px;
+  min-height: 100px;
   animation: fileSlideLeft 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .bidder-list-files .selected-file:hover {
-  border-color: #F44336;
-  background-color: #FFF5F5;
-  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.08);
+  border-color: transparent;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.bidder-list-files .selected-file:not(:first-child) {
+  border-top: 1px dashed rgba(211, 47, 47, 0.15);
+  padding-top: 20px;
 }
 
 .bidder-list-files .selected-file .file-name {
