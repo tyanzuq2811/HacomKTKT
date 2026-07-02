@@ -1,0 +1,56 @@
+\appendix
+\UnnumberedChapter{PHỤ LỤC}
+
+\section*{Phụ lục A. Cấu trúc thư mục mã nguồn dự án}
+
+Mã nguồn của hệ thống Price Advisor AI được tổ chức theo cấu trúc thư mục sau:
+
+\begin{lstlisting}[caption=Cấu trúc thư mục mã nguồn Price Advisor AI]
+price_advisor_standalone/
+    price_advisor/
+        __main__.py       # Entry point CLI
+        advisor.py        # Outlier Clamp logic
+        cli.py            # Benchmark engine
+        egress_guard.py   # Egress Guard (Redact)
+        llm_client.py     # LLM API + Auto-Retry
+        rag.py            # RAG pipeline (ChromaDB)
+    web/
+        index.html        # Giao dien Web UI (SPA)
+    runtime/
+        hacom_price_refs.csv  # Du lieu bao gia goc
+    wandb/                # Log Weights & Biases
+    .env                  # Cau hinh API Keys
+    requirements.txt      # Thu vien Python
+\end{lstlisting}
+
+\section*{Phụ lục B. Mẫu đầu ra JSON của hệ thống}
+
+Dưới đây là một mẫu đầu ra JSON thực tế khi hệ thống xử lý truy vấn vật tư ``Ống nhựa uPVC D90 Tiền Phong'':
+
+\begin{lstlisting}[caption=Mẫu đầu ra JSON từ Price Advisor AI]
+{
+  "material": "Ong nhua uPVC D90 Tien Phong",
+  "unit": "m",
+  "price_low": 45000,
+  "price_high": 62000,
+  "confidence": 0.92,
+  "reasoning": "Dua tren 7 bao gia lich su tu cac du an 
+    cong nghiep, gia tri trung binh la 53.500 VND/m. 
+    Gia thap nhat ghi nhan la 45.000 VND (2024), 
+    gia cao nhat la 62.000 VND (2025).",
+  "sources": [
+    {"project": "***", "price": 48000, "year": 2024},
+    {"project": "***", "price": 53000, "year": 2025},
+    {"project": "***", "price": 62000, "year": 2025}
+  ]
+}
+\end{lstlisting}
+
+\section*{Phụ lục C. Thông tin kho mã nguồn}
+
+\begin{itemize}
+    \item \textbf{GitHub Repository:} \url{https://github.com/tyanzuq2811/HacomKTKT.git}
+    \item \textbf{Commit kiểm thử chính thức:} \texttt{6558ddabb223bce7648cf0455493bf7816fec10a}
+    \item \textbf{W\&B Project:} \texttt{test-benchmark-gemma-31b-500}
+    \item \textbf{Run ID:} \texttt{k06c1gnt}
+\end{itemize}

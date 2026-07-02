@@ -1,0 +1,39 @@
+\UnnumberedChapter{KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN}
+
+\section*{Kết quả đạt được}
+
+Trong khuôn khổ của nghiên cứu này, nhóm sinh viên đã nghiên cứu và phát triển thành công hệ thống \textbf{Price Advisor AI} -- một ứng dụng thực tiễn của công nghệ Retrieval-Augmented Generation (RAG) kết hợp Mô hình Ngôn ngữ Lớn (LLM) nhằm giải quyết bài toán tư vấn dự toán giá vật tư Cơ điện (MEP). Những kết quả chính đạt được bao gồm:
+
+\begin{enumerate}
+    \item \textbf{Về mặt thuật toán và xử lý dữ liệu:} Đã xây dựng hoàn chỉnh quy trình Data Ingestion Pipeline, xử lý hơn 8.600 mặt hàng vật tư từ các file báo giá Excel thực tế. Dữ liệu được làm sạch, chuẩn hóa và nhúng (Embedding) thành các vector 1024 chiều bằng mô hình đa ngữ \texttt{BAAI/bge-m3}, lưu trữ trong cơ sở dữ liệu Vector ChromaDB. Kỹ thuật Dense Retrieval với thuật toán k-Nearest Neighbors trên không gian Cosine được áp dụng để truy xuất Top-K báo giá tương đồng nhất.
+
+    \item \textbf{Về mặt kỹ nghệ phần mềm:} Hệ thống được thiết kế theo kiến trúc Micro-services với ba phân hệ tách biệt: Data Layer, Inference Layer và Presentation Layer. Đã giải quyết triệt để hai vấn đề kỹ thuật quan trọng: (i) rò rỉ thông tin nhà thầu nhờ module \textbf{Egress Guard} sử dụng kỹ thuật Redact bằng biểu thức chính quy đa tầng; (ii) ổn định hóa hệ thống khi xử lý hàng loạt nhờ thuật toán \textbf{Auto-Retry với Exponential Backoff}.
+
+    \item \textbf{Về mặt hiệu năng thực tiễn:} Hệ thống đã được kiểm thử (Benchmark) trên 500 mẫu vật tư MEP đa dạng, được theo dõi toàn diện qua nền tảng Weights \& Biases. Kết quả ghi nhận: tỷ lệ hoàn thành API đạt 99.4\% (497/500 request thành công), độ chính xác khoảng giá dự đoán đạt \textbf{94.4\%} (469/497 mẫu), thời gian phản hồi trung bình 10.62 giây/request. Những con số này chứng minh tính khả thi của việc ứng dụng AI hỗ trợ kỹ sư lập dự toán trong thực tế sản xuất.
+\end{enumerate}
+
+\section*{Hạn chế của đề tài}
+
+Mặc dù hệ thống đã hoạt động ổn định và cho kết quả khả quan, vẫn tồn tại một số điểm hạn chế nhất định:
+
+\begin{itemize}
+    \item Khả năng nhận diện vật tư phụ thuộc vào mức độ chi tiết của mô tả đầu vào. Với các từ khóa quá chung chung (ví dụ: ``D90'', ``D32'' mà không có chất liệu hay nhà sản xuất), hệ thống Dense Retrieval trả về kết quả nhiễu, dẫn đến khoảng giá sai lệch. Mặc dù đã tích hợp cơ chế cảnh báo UI khi mô tả dưới 10 ký tự, vấn đề gốc rễ nằm ở chất lượng dữ liệu đầu vào của người dùng.
+
+    \item Thuật toán Statistical Outlier Clamp trong một số trường hợp đặc thù (chiếm khoảng 0.3\% tổng mẫu) đã kẹp biên quá chặt, loại bỏ các giá trị hợp lệ nhưng có biên độ giá lớn bất thường (ví dụ: đèn trang trí cao cấp).
+
+    \item Tốc độ phản hồi (Latency) phụ thuộc vào kết nối API đám mây. Khi chuyển đổi sang mô hình ngoại tuyến qua Ollama, yêu cầu phần cứng GPU tăng đáng kể (tối thiểu RTX 3050 4GB VRAM cho mô hình 31B tham số đã lượng tử hóa).
+\end{itemize}
+
+\section*{Hướng phát triển tương lai}
+
+Để hệ thống Price Advisor AI hoàn thiện hơn và có tính ứng dụng thực tiễn cao trong môi trường doanh nghiệp quy mô lớn, các hướng phát triển tiếp theo bao gồm:
+
+\begin{enumerate}
+    \item \textbf{Tích hợp Fine-tuning mô hình Embedding:} Đào tạo thêm mô hình \texttt{bge-m3} trên bộ dữ liệu thuật ngữ chuyên ngành MEP tiếng Việt để gia tăng độ phân biệt giữa các loại vật tư tương tự (ví dụ: phân biệt ``ống kẽm D90'' và ``ống nhựa uPVC D90'').
+
+    \item \textbf{Phát triển tính năng trích xuất BOM tự động:} Tích hợp khả năng upload trực tiếp bản vẽ thiết kế (CAD/BIM) hoặc file bảng khối lượng (Excel) để hệ thống tự động nhận diện toàn bộ danh sách vật tư và điền giá hàng loạt, thay vì tra cứu thủ công từng dòng.
+
+    \item \textbf{Đóng gói và triển khai sản phẩm:} Containerize toàn bộ hệ thống bằng Docker, triển khai lên Kubernetes để đảm bảo khả năng mở rộng (Scalability) và tính sẵn sàng cao (High Availability) cho các doanh nghiệp xây dựng quy mô lớn.
+
+    \item \textbf{Mở rộng phạm vi dữ liệu:} Thu thập và tích hợp thêm dữ liệu báo giá từ nhiều nguồn khác nhau (Công báo giá Bộ Xây dựng, Sàn thương mại điện tử B2B) để mở rộng độ phủ và tăng độ chính xác của mô hình.
+\end{enumerate}

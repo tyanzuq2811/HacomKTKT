@@ -1,0 +1,191 @@
+\chapter{CƠ SỞ LÝ THUYẾT VÀ CÔNG NGHỆ}
+\label{ch:chuong2}
+
+\section{Mô hình ngôn ngữ lớn (Large Language Models - LLM)}
+
+Mô hình ngôn ngữ lớn (LLM) đại diện cho bước đột phá vượt bậc của Trí tuệ nhân tạo trong lĩnh vực xử lý ngôn ngữ tự nhiên (NLP). Về bản chất, LLM là các mạng nơ-ron sâu với quy mô hàng chục đến hàng trăm tỷ tham số, được huấn luyện trước trên các kho ngữ liệu văn bản khổng lồ (hàng nghìn tỷ từ) bằng phương pháp học tự giám sát.
+
+\subsection{Kiến trúc Transformer và cơ chế Tự chú ý (Self-Attention)}
+
+Nền tảng kỹ thuật của mọi LLM hiện đại là kiến trúc \textbf{Transformer} được đề xuất bởi Vaswani và các cộng sự (2017). Khác với các kiến trúc tuần tự truyền thống như RNN hay LSTM vốn xử lý từ ngữ theo thứ tự tuyến tính và gặp hạn chế về tiêu biến gradient khi khoảng cách xa, Transformer cho phép xử lý song song toàn bộ văn bản đầu vào thông qua cơ chế tự chú ý (\textbf{Self-Attention}).
+
+Cơ chế tự chú ý cho phép mô hình đánh giá tầm quan trọng tương đối giữa các từ trong cùng một câu, bất kể khoảng cách của chúng. Về mặt toán học, với một chuỗi các vector biểu diễn đầu vào, mô hình tính toán ba ma trận: Query ($Q$), Key ($K$), và Value ($V$) thông qua các phép chiếu tuyến tính:
+\begin{equation}
+    Q = XW_Q, \quad K = XW_K, \quad V = XW_V
+\end{equation}
+Trong đó $W_Q, W_K, W_V \in \mathbb{R}^{d \times d_k}$ là các tham số trọng số được tối ưu hóa trong quá trình huấn luyện.
+
+Công thức tính toán cơ chế tự chú ý chấm tích tỷ lệ (\textbf{Scaled Dot-Product Attention}) được biểu diễn như sau:
+\begin{equation}
+    \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+\end{equation}
+Trong đó:
+\begin{itemize}
+    \item $QK^T$: Phép nhân ma trận tính toán điểm tương đồng giữa các cặp Query và Key.
+    \item $\sqrt{d_k}$: Hệ số tỷ lệ với $d_k$ là số chiều của vector Key. Hệ số này giúp thu nhỏ giá trị tích vô hướng để tránh đẩy hàm softmax vào các vùng có đạo hàm cực nhỏ.
+    \item $\text{softmax}$: Hàm kích hoạt chuẩn hóa các điểm tương đồng thành một phân phối xác suất có tổng bằng 1.
+\end{itemize}
+
+Sơ đồ \ref{sodo:self_attention} mô tả trực quan luồng tính toán của cơ chế Scaled Dot-Product Attention trong mạng Transformer.
+
+\begin{sodo}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.8cm and 1cm,
+        box/.style={rectangle, draw, rounded corners, fill=blue!10, text width=2.5cm, align=center, minimum height=0.8cm},
+        math/.style={circle, draw, fill=yellow!20, minimum size=0.8cm},
+        arrow/.style={-{Stealth[scale=1.2]}, thick}
+    ]
+        % Nodes
+        \node[box] (q) {Query ($Q$)};
+        \node[box, right=of q] (k) {Key ($K$)};
+        \node[box, right=of k] (v) {Value ($V$)};
+        
+        \node[math, below=of k, xshift=-0.9cm] (mul1) {$\times$};
+        \node[box, below=of mul1] (scale) {Scale ($\frac{1}{\sqrt{d_k}}$)};
+        \node[box, below=of scale] (softmax) {Softmax};
+        \node[math, below=of softmax, xshift=1.9cm] (mul2) {$\times$};
+        \node[box, below=of mul2] (out) {Output Vector};
+
+        % Arrows
+        \draw[arrow] (q) -- (mul1);
+        \draw[arrow] (k) -- (mul1);
+        \draw[arrow] (mul1) -- (scale);
+        \draw[arrow] (scale) -- (softmax);
+        \draw[arrow] (softmax) -- (mul2);
+        \draw[arrow] (v) |- (mul2);
+        \draw[arrow] (mul2) -- (out);
+    \end{tikzpicture}
+    \SodoCaption{Cơ chế Scaled Dot-Product Attention}{Vaswani et al., 2017}
+    \label{sodo:self_attention}
+\end{sodo}
+
+Để nâng cao khả năng biểu diễn ngữ cảnh phức tạp, mô hình áp dụng cơ chế tự chú ý đa đầu (\textbf{Multi-Head Attention}). Thay vì tính toán một bộ Attention duy nhất, Multi-Head Attention thực hiện chiếu các Query, Key và Value $h$ lần sang các không gian biểu diễn khác nhau:
+\begin{equation}
+    \text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \text{head}_2, \dots, \text{head}_h)W^O
+\end{equation}
+\begin{equation}
+    \text{Trong đó: } \text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
+\end{equation}
+Cơ chế này cho phép mô hình đồng thời chú ý đến thông tin từ các không gian biểu diễn khác nhau ở các vị trí khác nhau.
+
+\subsection{Cơ chế hoạt động của mô hình Decoder tự hồi quy}
+
+Các mô hình LLM được sử dụng trong đề tài này (như Google Gemini hay Gemma/Qwen) thuộc lớp mô hình tự hồi quy chỉ giải mã (\textbf{Decoder-only}). 
+
+Mô hình tự hồi quy sinh ra chuỗi văn bản bằng cách dự đoán từ tiếp theo ($y_t$) dựa trên chuỗi các từ đã xuất hiện trước đó ($y_{<t}$) và câu lệnh gợi ý đầu vào ($X$). Xác suất chung của chuỗi văn bản đầu ra $Y = (y_1, y_2, \dots, y_m)$ được tính bằng tích xác suất có điều kiện:
+\begin{equation}
+    P(Y | X) = \prod_{t=1}^{m} P(y_t | y_1, y_2, \dots, y_{t-1}, X)
+\end{equation}
+
+Để kiểm soát tính sáng tạo và ngẫu nhiên của mô hình, các tham số giải mã được áp dụng:
+\begin{itemize}
+    \item \textbf{Temperature ($T$):} Tham số kiểm soát độ phẳng của phân phối xác suất softmax:
+    \begin{equation}
+        P(y_i) = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}
+    \end{equation}
+    Khi $T \to 0$, mô hình hoạt động tiệm cận giải thuật Greedy Search (luôn chọn từ có xác suất cao nhất), giúp tạo ra các câu trả lời mang tính xác định và có độ chính xác kỹ thuật cao. Ngược lại, khi $T$ lớn, phân phối xác suất trở nên phẳng hơn, dễ dẫn đến lỗi ảo giác. Do đó, trong bài toán gợi ý đơn giá MEP đòi hỏi độ chính xác tuyệt đối, giá trị Temperature luôn được thiết lập tiệm cận 0 ($T \le 0.1$).
+    \item \textbf{Top-p (Nucleus Sampling):} Lọc các từ có xác suất cộng dồn đạt ngưỡng $p$ trước khi thực hiện lấy mẫu, giúp gạt bỏ hoàn toàn các từ có xác suất cực thấp.
+\end{itemize}
+
+\section{Cơ sở lý thuyết của Retrieval-Augmented Generation (RAG)}
+
+Mặc dù có khả năng ngôn ngữ vượt trội, các LLM gặp phải hai giới hạn cố hữu khi ứng dụng trực tiếp vào các bài toán kỹ thuật chuyên sâu:
+1. \textbf{Sự ảo giác:} Mô hình tự tin đưa ra các thông số kỹ thuật hoặc đơn giá không có thật do xu hướng sinh từ tiếp theo dựa trên xác suất thay vì tra cứu dữ liệu thực tế.
+2. \textbf{Sự lạc hậu về tri thức:} Tri thức của LLM bị đóng băng tại thời điểm hoàn thành quá trình huấn luyện. Mô hình không có khả năng cập nhật các biến động giá cả thị trường hay các báo giá dự án mới phát sinh.
+
+Để khắc phục triệt để, kiến trúc \textbf{Retrieval-Augmented Generation (RAG)} (Lewis et al., 2020) được tích hợp nhằm cung cấp một nguồn tri thức động và có thể kiểm chứng từ bên ngoài.
+
+\subsection{Mô hình hóa toán học giảm thiểu Entropy ảo giác}
+
+Về mặt toán học, RAG biến đổi bài toán sinh chữ có điều kiện của LLM. Thay vì mô hình chỉ dựa trên tham số nội tại được lưu trong trọng số mạng ($P(Y | X)$), RAG cung cấp thêm một tập tài liệu ngữ cảnh hữu hiệu ($D$) được truy xuất từ cơ sở dữ liệu tri thức đáng tin cậy. Công thức xác suất sinh chữ lúc này trở thành:
+\begin{equation}
+    P(Y | X, D) = \prod_{t=1}^{m} P(y_t | y_{<t}, X, D)
+\end{equation}
+
+Sự xuất hiện của ngữ cảnh thực tế $D$ giúp giới hạn không gian tìm kiếm của mô hình. Theo lý thuyết thông tin, lượng thông tin không chắc chắn (Entropy) của phân phối đầu ra giảm đáng kể khi có thêm biến điều kiện:
+\begin{equation}
+    H(Y | X, D) \le H(Y | X)
+\end{equation}
+Việc giảm thiểu Entropy này biểu thị việc hạn chế tối đa khả năng xuất hiện lỗi ảo giác, ép mô hình ngôn ngữ phải đưa ra các suy luận bám sát vào dữ liệu thực tế được cung cấp.
+
+\subsection{Luồng kiến trúc RAG chuẩn trong hệ thống}
+
+Sơ đồ \ref{sodo:rag_standard} thể hiện quy trình 3 giai đoạn (Truy xuất - Tăng cường - Sinh) của mô hình RAG trong bài toán gợi ý đơn giá vật tư MEP.
+
+\begin{sodo}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.6cm and 1.8cm,
+        box/.style={rectangle, draw, rounded corners, fill=blue!10, text width=2.8cm, align=center, minimum height=0.8cm},
+        db/.style={cylinder, draw, shape border rotate=90, aspect=0.25, fill=yellow!20, text width=2cm, align=center, minimum height=1.2cm},
+        arrow/.style={-{Stealth[scale=1.2]}, thick}
+    ]
+        % Nodes
+        \node[box] (query) {Truy vấn từ người dùng\\ (Mô tả vật tư)};
+        \node[box, right=of query] (embed) {Biến đổi Vector\\ (Embedding)};
+        \node[db, right=of embed] (db) {CSDL Vector\\ (ChromaDB)};
+        \node[box, below=of db] (context) {Trích xuất Top-K\\ dữ liệu giá lịch sử};
+        \node[box, below=of embed] (prompt) {Tăng cường Prompt\\ (Prompt Generator)};
+        \node[box, below=of query] (llm) {Mô hình LLM\\ (Suy luận logic)};
+        \node[box, left=of llm] (out) {Đơn giá \& Lập luận\\ dạng JSON};
+
+        % Arrows
+        \draw[arrow] (query) -- (embed);
+        \draw[arrow] (embed) -- node[above, font=\footnotesize] {Tìm kiếm} (db);
+        \draw[arrow] (db) -- (context);
+        \draw[arrow] (context) -- (prompt);
+        \draw[arrow] (query) -- (prompt);
+        \draw[arrow] (prompt) -- (llm);
+        \draw[arrow] (llm) -- (out);
+    \end{tikzpicture}
+    \SodoCaption{Quy trình 3 giai đoạn của hệ thống RAG}{Lewis et al., 2020}
+    \label{sodo:rag_standard}
+\end{sodo}
+
+\section{Truy xuất thông tin dày đặc (Dense Retrieval) và CSDL Vector}
+
+Phương pháp truy xuất truyền thống như truy xuất thưa dựa trên tần suất xuất hiện từ khóa như TF-IDF hay BM25. Công thức BM25 đánh giá mức độ liên quan giữa tài liệu $D$ và câu hỏi $Q$ như sau:
+\begin{equation}
+    \text{score}(D, Q) = \sum_{i=1}^{n} \text{IDF}(q_i) \cdot \frac{f(q_i, D) \cdot (k_1 + 1)}{f(q_i, D) + k_1 \cdot \left(1 - b + b \cdot \frac{|D|}{\text{avgdl}}\right)}
+\end{equation}
+Trong đó $f(q_i, D)$ là tần suất từ khóa $q_i$ xuất hiện trong tài liệu $D$, $|D|$ là độ dài tài liệu, và $\text{avgdl}$ là độ dài tài liệu trung bình. BM25 gặp hạn chế nghiêm trọng khi người dùng sử dụng từ đồng nghĩa hoặc gõ viết tắt (ví dụ: "cáp đồng" và "dây điện đồng"), do thuật toán chỉ so khớp ký tự thuần túy.
+
+Để giải quyết vấn đề này, hệ thống áp dụng phương pháp \textbf{Truy xuất thông tin dày đặc (Dense Retrieval)} bằng cách biểu diễn ngữ nghĩa của văn bản dưới dạng các vector số thực mật độ cao.
+
+\subsection{Mô hình Embedding ngữ nghĩa BAAI/bge-m3}
+
+Để ánh xạ văn bản sang không gian vector, hệ thống sử dụng mô hình embedding đa ngôn ngữ nâng cao \texttt{BAAI/bge-m3} (Xiao et al., 2023). Mô hình này sở hữu ba đặc tính ưu việt:
+\begin{enumerate}
+    \item \textbf{Đa ngôn ngữ:} Hỗ trợ tiếng Việt xuất sắc, hiểu được các thuật ngữ chuyên ngành xây dựng pha trộn tiếng Anh-Việt (như "cáp đồng XLPE", "ống nhựa uPVC").
+    \item \textbf{Đa tính năng:} Đồng thời hỗ trợ cả cơ chế tìm kiếm dense, sparse và đa vector để tối ưu hóa độ chính xác.
+    \item \textbf{Độ dài ngữ cảnh lớn:} Hỗ trợ chiều dài chuỗi đầu vào lên tới 8192 tokens, cho phép biểu diễn ngữ nghĩa của các mô tả kỹ thuật phức tạp.
+\end{enumerate}
+
+Với một đoạn văn bản mô tả vật tư $x$, mô hình embedding là một hàm số $f: \mathcal{X} \to \mathbb{R}^d$ biến đổi $x$ thành một vector $v = f(x)$ trong không gian $d = 1024$ chiều. Khoảng cách ngữ nghĩa giữa hai văn bản được định lượng bằng độ tương đồng Cosine giữa hai vector đại diện $u$ và $v$:
+\begin{equation}
+    \text{CosineSimilarity}(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2} = \frac{\sum_{i=1}^{d} u_i v_i}{\sqrt{\sum_{i=1}^{d} u_i^2} \sqrt{\sum_{i=1}^{d} v_i^2}}
+\end{equation}
+Giá trị Cosine Similarity nằm trong khoảng $[-1, 1]$. Giá trị càng gần $1$ thể hiện hai khái niệm vật tư càng tương đồng về mặt bản chất kỹ thuật.
+
+\subsection{Tìm kiếm láng giềng gần nhất hiệu năng cao (HNSW)}
+
+Khi số lượng mặt hàng vật tư trong hệ thống tăng lên hàng vạn dòng, việc tính toán độ tương đồng Cosine tuyến tính với mọi vector trong cơ sở dữ liệu sẽ tốn độ phức tạp thời gian $O(N \cdot d)$, gây trễ lớn cho hệ thống.
+
+Để đạt tốc độ phản hồi dưới giây, cơ sở dữ liệu vector ChromaDB sử dụng thuật toán \textbf{Hierarchical Navigable Small World (HNSW)} (Malkov \& Yashunin, 2018). HNSW là một cấu trúc dữ liệu đồ thị nhiều lớp dựa trên nguyên lý của danh sách bỏ qua.
+*   **Lớp 0 (Lớp đáy):** Chứa toàn bộ các vector dữ liệu trong hệ thống được kết nối với nhau.
+*   **Các lớp phía trên:** Chứa các liên kết thưa thớt hơn giữa các điểm đại diện để định tuyến tìm kiếm nhanh chóng trên khoảng cách lớn.
+
+Độ phức tạp thời gian tìm kiếm của thuật toán HNSW tiệm cận mức:
+\begin{equation}
+    T_{search} = O(\log N)
+\end{equation}
+Cơ chế này cho phép thực hiện tra cứu Top-K báo giá có độ tương đồng ngữ nghĩa cao nhất trong hàng triệu bản ghi chỉ trong vài mili-giây.
+
+\section{Công nghệ và thư viện phụ trợ}
+
+\subsection{FastAPI - Phục vụ API bất đồng bộ}
+FastAPI là một web framework hiện đại cho phép xây dựng ứng dụng RESTful API hiệu năng cao dựa trên Python. FastAPI tận dụng cơ chế lập trình bất đồng bộ `async/await` và kiểm tra kiểu dữ liệu tĩnh thời gian chạy `Pydantic` giúp tự động kiểm tra tính hợp lệ của JSON Schema đầu vào/đầu ra, hạn chế các lỗi định dạng dữ liệu truyền thông tin giữa các tầng kiến trúc.
+
+\subsection{Weights \& Biases (W\&B) - Quản lý chu trình MLOps}
+Weights \& Biases là nền tảng quản lý thí nghiệm học máy chuyên dụng. Trong phát triển hệ thống RAG và LLM, W\&B đóng vai trò ghi nhận lịch sử các lượt chạy thử nghiệm (Runs), lưu trữ phiên bản mã nguồn (Git commit), theo dõi sự thay đổi của prompt (Prompt Versioning), và tạo bảng so sánh hiệu năng trực quan giữa các cấu hình tham số. Việc giám sát liên tục qua W\&B giúp kỹ sư phát hiện nhanh các ca kiểm thử đoán giá sai lệch để hiệu chỉnh thuật toán kịp thời.

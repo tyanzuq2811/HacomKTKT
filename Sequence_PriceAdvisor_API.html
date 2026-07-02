@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sequence — PriceAdvisor phương án B (API ngoài)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+body{background:#f1f5f9;color:#1e293b;padding:16px;line-height:1.45}
+.head-title{font-size:16px;font-weight:800}
+.head-sub{font-size:10.5px;color:#64748b;margin-top:1px;margin-bottom:12px}
+
+.lane-key{display:flex;gap:14px;flex-wrap:wrap;font-size:9px;margin-bottom:12px}
+.lane-key span{display:flex;align-items:center;gap:5px;color:#475569}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid}
+.sw-in{background:#f0fdf4;border-color:#86efac}
+.sw-edge{background:#fff1f2;border-color:#ef4444}
+.sw-out{background:#fef2f2;border-color:#fca5a5;border-style:dashed}
+
+.step{display:flex;gap:10px;margin-bottom:7px;align-items:stretch}
+.num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#1e293b;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:8px}
+.card{flex:1;border-radius:8px;padding:8px 11px;border:1.5px solid}
+.c-in{background:#f0fdf4;border-color:#86efac}
+.c-edge{background:#fff1f2;border-color:#ef4444}
+.c-out{background:#fef2f2;border-color:#fca5a5;border-style:dashed}
+.route{font-size:9px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.actor{background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:1px 7px;font-size:8.5px;font-weight:700;color:#334155}
+.arr{color:#94a3b8;font-weight:700}
+.desc{font-size:9px;color:#475569;line-height:1.55}
+.payload{margin-top:5px;background:#fff;border:1px dashed #cbd5e1;border-radius:6px;padding:5px 8px;font-size:8.5px;color:#334155;font-family:'Courier New',monospace;line-height:1.5;white-space:pre-wrap}
+.tag{display:inline-block;font-size:8px;font-weight:800;padding:1px 6px;border-radius:6px;margin-left:6px;vertical-align:middle}
+.t-send{background:#fee2e2;color:#b91c1c}
+.t-keep{background:#dcfce7;color:#166534}
+
+.boundary{text-align:center;margin:10px 0}
+.boundary b{font-size:9px;font-weight:800;color:#b91c1c;background:#fee2e2;padding:4px 12px;border-radius:20px;border:1.5px dashed #ef4444}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.panel{border-radius:8px;padding:9px 11px;border:1.5px solid}
+.panel h4{font-size:10px;font-weight:800;margin-bottom:6px}
+.panel ul{margin:0;padding-left:15px}
+.panel li{font-size:9px;line-height:1.6;margin-bottom:2px}
+.p-out{background:#fef2f2;border-color:#fca5a5}.p-out h4{color:#b91c1c}
+.p-in{background:#f0fdf4;border-color:#86efac}.p-in h4{color:#15803d}
+.note{border-radius:6px;padding:7px 10px;margin-top:12px;font-size:9px;line-height:1.55;background:#e0f2fe;color:#0c4a6e;border:1px solid #bae6fd}
+</style>
+</head>
+<body>
+
+<div class="head-title">Sequence — PriceAdvisor phương án B (API ngoài)</div>
+<div class="head-sub">Các bước gọi + dữ liệu cụ thể · ví dụ 1 dòng thiếu giá cơ sở · nhấn mạnh đường biên egress</div>
+
+<div class="lane-key">
+  <span><i class="sw sw-in"></i> Nội bộ (an toàn)</span>
+  <span><i class="sw sw-edge"></i> Đường biên / Egress guard</span>
+  <span><i class="sw sw-out"></i> Internet (dịch vụ ngoài)</span>
+  <span><i class="tag t-send" style="margin:0">RA NGOÀI</i> dữ liệu rời mạng</span>
+  <span><i class="tag t-keep" style="margin:0">Ở LẠI</i> không rời mạng</span>
+</div>
+
+<!-- 1 -->
+<div class="step"><div class="num">1</div>
+  <div class="card c-in">
+    <div class="route"><span class="actor">ComparisonEngine</span><span class="arr">→</span><span class="actor">PriceAdvisor</span><span class="tag t-keep">Ở LẠI</span></div>
+    <div class="desc">Engine gặp 1 dòng <b>thiếu giá cơ sở cấp 1–4</b> → yêu cầu gợi ý (async). Chỉ gửi mô tả + đơn vị + khối lượng, KHÔNG gửi đơn giá nhà thầu.</div>
+    <div class="payload">item = {
+  desc: "Cáp đồng XLPE/PVC 4x25mm²",
+  unit: "m",  qty: 1250,
+  brand: "(để trống / chưa kiểm)"
+}</div>
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="step"><div class="num">2</div>
+  <div class="card c-in">
+    <div class="route"><span class="actor">PriceAdvisor</span><span class="arr">→</span><span class="actor">Kho giá nội bộ (Vector DB)</span><span class="tag t-keep">Ở LẠI</span></div>
+    <div class="desc">Truy vấn ngữ nghĩa bằng embedding (chạy nội bộ) → lấy top-K mục tương tự kèm giá lịch sử + nguồn.</div>
+    <div class="payload">topK = [
+  {ref:"PR-2024-08#I.2", price:104000, unit:"m", src:"Gói CĐ 2024"},
+  {ref:"PR-2023-03#I.5", price: 98500, unit:"m", src:"Gói CĐ 2023"},
+  {ref:"CAT-TaiSin#4x25", price:110000, unit:"m", src:"Catalogue NCC"}
+]</div>
+  </div>
+</div>
+
+<!-- 3 -->
+<div class="step"><div class="num">3</div>
+  <div class="card c-edge">
+    <div class="route"><span class="actor">PriceAdvisor</span><span class="arr">→</span><span class="actor">Anonymizer + Egress guard</span><span class="tag t-keep">Ở LẠI</span></div>
+    <div class="desc">Dựng prompt &amp; <b>ẩn danh</b>: bỏ tên dự án/NCC thật → mã giả; bỏ mọi giá nhà thầu thật; chặn nếu phát hiện PII/tên NT. Giá lịch sử có thể giữ ở dạng <b>khoảng</b> hoặc quy về chỉ số tương đối.</div>
+    <div class="payload">prompt = {
+  item: "Cáp đồng XLPE/PVC 4x25mm², đơn vị m",
+  refs: ["~104k/m (nguồn A,2024)",
+         "~98k/m (nguồn B,2023)",
+         "~110k/m (catalogue)"],
+  yeu_cau: "Đề xuất KHOẢNG đơn giá hợp lý + lý do"
+}</div>
+  </div>
+</div>
+
+<div class="boundary"><b>▼ ĐƯỜNG BIÊN — chỉ text ẩn danh được đi ra internet ▼</b></div>
+
+<!-- 4 -->
+<div class="step"><div class="num">4</div>
+  <div class="card c-out">
+    <div class="route"><span class="actor">Egress guard</span><span class="arr">→</span><span class="actor">API LLM ngoài</span><span class="tag t-send">RA NGOÀI</span></div>
+    <div class="desc">Gọi OpenAI/Claude/Gemini với <b>đúng prompt ẩn danh ở bước 3</b>. Yêu cầu trả JSON có cấu trúc.</div>
+    <div class="payload">POST https://api.llm.../chat
+body: { messages:[{role:user, content: prompt}],
+        response_format: json }</div>
+  </div>
+</div>
+
+<!-- 5 -->
+<div class="step"><div class="num">5</div>
+  <div class="card c-out">
+    <div class="route"><span class="actor">API LLM ngoài</span><span class="arr">→</span><span class="actor">Egress guard</span><span class="tag t-send">RA NGOÀI</span></div>
+    <div class="desc">LLM <b>diễn giải + tổng hợp</b> từ các đoạn trích (không tự nghĩ số ngoài biên kho giá). Trả khoảng giá + lý do.</div>
+    <div class="payload">{
+  price_low: 99000, price_high: 108000, unit: "m",
+  reasoning: "Nằm trong vùng 98–110k/m của 3 nguồn;
+              quy cách 4x25 phổ biến, giá ổn định."
+}</div>
+  </div>
+</div>
+
+<div class="boundary"><b>▲ Trả kết quả (text) về nội bộ ▲</b></div>
+
+<!-- 6 -->
+<div class="step"><div class="num">6</div>
+  <div class="card c-in">
+    <div class="route"><span class="actor">PriceAdvisor · Validator</span><span class="tag t-keep">Ở LẠI</span></div>
+    <div class="desc">Kiểm hợp lý: đơn vị khớp (m), khoảng giá nằm trong biên kho giá, KL×ĐG hợp lý. <b>Gắn lại nguồn nội bộ thật</b> (id mục kho giá) + tính confidence. Loại nếu vô lý.</div>
+    <div class="payload">suggested = {
+  low:99000, high:108000, source:"LLM_RAG",
+  confidence:0.78,
+  refs:["PR-2024-08#I.2","CAT-TaiSin#4x25"],
+  reasoning:"…"
+}</div>
+  </div>
+</div>
+
+<!-- 7 -->
+<div class="step"><div class="num">7</div>
+  <div class="card c-in">
+    <div class="route"><span class="actor">PriceAdvisor</span><span class="arr">→</span><span class="actor">PostgreSQL</span><span class="arr">→</span><span class="actor">Web UI</span><span class="tag t-keep">Ở LẠI</span></div>
+    <div class="desc">Ghi vào <b>BOQItem.suggested_*</b> → UI hiện cột "Giá gợi ý (tham khảo)" với chip nguồn + độ tin cậy. KHÔNG tự bật cờ HIGH.</div>
+    <div class="payload">UI: [Giá gợi ý (tham khảo)] 99.000–108.000 đ/m
+     nguồn: LLM_RAG · tin cậy 78%  [✓ Chấp nhận] [✕]</div>
+  </div>
+</div>
+
+<!-- 8 -->
+<div class="step"><div class="num">8</div>
+  <div class="card c-in">
+    <div class="route"><span class="actor">Người dùng</span><span class="arr">→</span><span class="actor">Kho giá nội bộ</span><span class="tag t-keep">Ở LẠI</span></div>
+    <div class="desc">Chuyên viên accept/reject. Quyết định được <b>log lại để bồi đắp kho giá</b> (vòng học) — chỉ cái được chấp nhận mới dùng làm tham chiếu phụ.</div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="panel p-out">
+    <h4>🌐 Cái gì RA internet</h4>
+    <ul>
+      <li>Mô tả hạng mục + đơn vị (đã ẩn danh)</li>
+      <li>Trích khoảng giá tham khảo (không gắn dự án thật)</li>
+      <li>Yêu cầu đề xuất khoảng giá</li>
+    </ul>
+  </div>
+  <div class="panel p-in">
+    <h4>🔒 Cái gì Ở LẠI nội bộ</h4>
+    <ul>
+      <li>Giá nhà thầu thật, tên nhà thầu</li>
+      <li>Danh tính dự án, file gốc HSDT</li>
+      <li>Kho giá &amp; retrieval (embedding chạy nội bộ)</li>
+      <li>Nguồn thật của con số + confidence</li>
+    </ul>
+  </div>
+</div>
+
+<div class="note">💡 Cùng sequence này, phương án A (self-host) chỉ <b>bỏ bước 3–5 đi qua biên</b>: LLM chạy nội bộ nên không có đoạn ra internet, và có thể đưa đầy đủ ngữ cảnh. Interface PriceAdvisor giữ nguyên → đổi backend không sửa engine.</div>
+
+</body>
+</html>

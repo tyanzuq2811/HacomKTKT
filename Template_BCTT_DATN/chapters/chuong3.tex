@@ -1,0 +1,127 @@
+\chapter{PHÂN TÍCH, THIẾT KẾ VÀ CÀI ĐẶT HỆ THỐNG}
+\label{ch:chuong3}
+
+\section{Kiến trúc tổng thể của hệ thống Price Advisor AI}
+Hệ thống được thiết kế theo tư tưởng kiến trúc hướng dịch vụ nhỏ và hướng sự kiện, phân tách rõ ràng giữa phân hệ nạp dữ liệu và phân hệ suy luận. Cách tiếp cận này giúp tối ưu hóa tài nguyên phần cứng, dễ dàng nâng cấp hoặc thay đổi mô hình LLM (như chuyển từ Gemini sang Gemma) mà không ảnh hưởng đến CSDL lõi.
+
+Để thể hiện trực quan luồng dữ liệu, Hình \ref{fig:arch_flow} minh họa các thành phần cốt lõi của hệ thống từ khi kỹ sư nhập liệu cho đến khi trả về kết quả.
+
+\begin{figure}[H]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[
+        node distance=1.5cm and 2cm,
+        box/.style={rectangle, draw, rounded corners, fill=blue!10, text width=3cm, align=center, minimum height=1.2cm},
+        db/.style={cylinder, draw, shape border rotate=90, aspect=0.25, fill=yellow!20, text width=2.5cm, align=center, minimum height=1.5cm},
+        user/.style={circle, draw, fill=green!10, text width=2cm, align=center},
+        arrow/.style={-{Stealth[scale=1.2]}, thick}
+    ]
+        % Nodes
+        \node[user] (kisu) {Kỹ sư dự toán\\ (Web UI)};
+        \node[box, below=of kisu] (input) {Mô tả vật tư\\ (Query)};
+        \node[box, right=of input] (embedding) {Mô hình Embedding (bge-m3)};
+        \node[db, right=of embedding] (vector_db) {ChromaDB};
+        \node[box, below=of embedding] (retrieval) {Động cơ truy xuất (Top-K)};
+        \node[box, below=of vector_db] (data_pipeline) {Luồng nạp dữ liệu (Excel)};
+        \node[box, left=of retrieval] (prompt) {System Prompt + Ngữ cảnh};
+        \node[box, below=of prompt] (egress) {Egress Guard};
+        \node[box, right=of egress] (llm) {LLM (Gemini / Ollama)};
+        \node[box, left=of egress] (output) {JSON Kết quả};
+
+        % Arrows
+        \draw[arrow] (kisu) -- (input);
+        \draw[arrow] (input) -- (embedding);
+        \draw[arrow] (embedding) -- node[above, font=\footnotesize] {Query Vector} (vector_db);
+        \draw[arrow] (vector_db) -- node[right, font=\footnotesize] {Similarity Search} (retrieval);
+        \draw[arrow] (data_pipeline) -- node[right, font=\footnotesize] {Insert Vectors} (vector_db);
+        \draw[arrow] (retrieval) -- node[above, font=\footnotesize] {Context} (prompt);
+        \draw[arrow] (input) -- (prompt);
+        \draw[arrow] (prompt) -- (egress);
+        \draw[arrow] (egress) -- node[above, font=\footnotesize] {Safe Prompt} (llm);
+        \draw[arrow] (llm.south) -- ++(0,-0.6) -| node[pos=0.3, below, font=\footnotesize] {Generate} (output.south);
+        \draw[arrow] (output) |- (kisu);
+    \end{tikzpicture}%
+    }
+    \caption{Sơ đồ luồng hoạt động tổng thể của hệ thống Price Advisor AI}
+    \label{fig:arch_flow}
+\end{figure}
+
+Hệ thống bao gồm ba luồng hoạt động song song và phối hợp chặt chẽ:
+\begin{enumerate}
+    \item \textbf{Luồng nạp và số hóa dữ liệu:} 
+    Chịu trách nhiệm xử lý hàng ngàn tệp Excel báo giá gốc từ nhiều nguồn nhà cung cấp khác nhau. Sử dụng thư viện Pandas để tiến hành làm sạch, xử lý các hàng rỗng, và trích xuất các chiều thông tin cốt lõi (Tên vật tư, Đơn vị tính, Giá, Nhà thầu, Tên dự án). Sau đó, mô tả vật tư được nhúng bởi mô hình đa ngữ \texttt{BAAI/bge-m3} thành các vector 1024 chiều và lưu trữ trực tiếp trong cơ sở dữ liệu Vector (ChromaDB) dưới dạng các Collection.
+    \item \textbf{Động cơ truy xuất ngữ nghĩa:} 
+    Khi kỹ sư nhập chuỗi truy vấn từ giao diện người dùng, hệ thống sẽ ngay lập tức biến đổi chuỗi này thành vector ngữ nghĩa. Thông qua thuật toán k-láng giềng gần nhất trên không gian chiều cao, hệ thống tính toán khoảng cách Cosine và trả về Top-K (từ 5 đến 10) các báo giá có độ tương đồng lớn nhất làm ngữ cảnh.
+    \item \textbf{Bộ phận suy luận và sinh văn bản:} 
+    Đóng vai trò như bộ não phân tích quyết định. Phân hệ này kết hợp ngữ cảnh từ động cơ truy xuất và cấu trúc câu lệnh được định nghĩa sẵn. Truy vấn sau đó được đóng gói và kiểm duyệt qua Egress Guard rồi gửi lên API của LLM (Gemini/Gemma). Một bộ lọc được cài đặt ở đầu ra để đảm bảo kết quả luôn tuân thủ chuẩn JSON Schema phục vụ cho việc hiển thị lên Web UI.
+\end{enumerate}
+
+\section{Thiết kế các module cốt lõi và thuật toán tối ưu}
+
+\subsection{Thuật toán kẹp khoảng giá}
+Đặc thù của dữ liệu báo giá là thường chứa các giá trị ngoại lai do sai sót khi nhập liệu thủ công của nhà cung cấp, hoặc do các vật tư mang tính đặc chủng có giá trị cao bất thường. Để tránh việc AI đưa ra khoảng giá sai lệch do bị ảnh hưởng bởi các ngoại lai, hệ thống áp dụng kỹ thuật kẹp khoảng giá dựa trên phân phối thực tế.
+
+Cụ thể, module \texttt{advisor.py} sẽ trích xuất danh sách giá từ Top-K kết quả RAG. Nó tính toán giá trị thấp nhất và cao nhất thực tế. Nếu LLM tự động suy luận ra một khoảng giá $[P_{low}, P_{high}]$ vượt quá biên độ thực tế này, thuật toán sẽ thực thi hàm kẹp:
+\begin{equation}
+    P_{low}^* = \max(P_{low}, Min_{actual} \times (1 - \epsilon))
+\end{equation}
+\begin{equation}
+    P_{high}^* = \min(P_{high}, Max_{actual} \times (1 + \epsilon))
+\end{equation}
+Trong đó $\epsilon$ là hệ số dãn nở được thiết lập bằng 0.05 (tương đương 5\%). Thuật toán này đóng vai trò như một màng lọc an toàn, ép khoảng giá do AI dự đoán phải nằm trong vùng kiểm soát thống kê hợp lý.
+
+\subsection{Module bảo mật thông tin Egress Guard}
+Một trong những rủi ro bảo mật lớn nhất khi ứng dụng Cloud LLM API (như Google Gemini) trong môi trường doanh nghiệp là nguy cơ rò rỉ thông tin nhạy cảm của dự án (Tên dự án, Tên nhà thầu, Tên đối tác). 
+
+Để giải quyết triệt để, phân hệ \texttt{egress\_guard.py} được tích hợp như một bức tường lửa ngay trước khi Prompt được gửi đi. Dưới đây là cài đặt cốt lõi của thuật toán:
+
+\begin{lstlisting}[language=Python, caption=Cài đặt thuật toán Redact trong Egress Guard]
+import re
+
+_PROJECT_HINTS = re.compile(r"(?i)\b(hacom|nhà thầu|nha thau)\b")
+
+def sanitize_prompt_for_external(prompt: str) -> str:
+    """Xóa bỏ các từ khóa nhạy cảm thay vì chặn toàn bộ request."""
+    return _PROJECT_HINTS.sub("***", prompt)
+\end{lstlisting}
+
+Phân tích thuật toán:
+\begin{itemize}
+    \item \textbf{Biểu thức Regex đa tầng:} Biểu thức \texttt{(?i)\b} cho phép tìm kiếm từ khóa không phân biệt hoa thường và bắt đúng ranh giới của từ. Các từ khóa được liệt kê trong danh sách đen bao gồm "Nhà thầu", "HACOM", "Dự án".
+    \item \textbf{Cơ chế Redact:} Thay vì ném lỗi làm gián đoạn tiến trình như cách tiếp cận cũ, thuật toán sử dụng hàm \texttt{sub()} để tự động thay thế từ khóa thành \texttt{***}.
+\end{itemize}
+Nhờ đó, LLM vẫn nhận được đầy đủ ngữ cảnh kỹ thuật của vật tư để định giá (Ví dụ: "\texttt{***} chỉ lắp đặt ống D90"), mà danh tính của nhà thầu và dự án vẫn được bảo mật an toàn.
+
+\subsection{Cơ chế Auto-Retry và Exponential Backoff}
+Trong quá trình xử lý hàng loạt khối lượng lớn dữ liệu như khi chạy Benchmark, hệ thống liên tục gửi hàng trăm request lên API đám mây. Điều này dễ dàng kích hoạt cơ chế phòng vệ của nhà cung cấp, dẫn đến các lỗi HTTP 429 hoặc các lỗi máy chủ tạm thời HTTP 500, 503.
+Module \texttt{llm\_client.py} được trang bị cơ chế tự động thử lại với độ trễ tăng dần theo hàm số mũ.
+
+\begin{lstlisting}[language=Python, caption=Cơ chế Auto-Retry xử lý lỗi mạng]
+def _retry_on_transient(func, *args, **kwargs):
+    """Auto-retry với exponential backoff cho lỗi tạm thời (429/500/503)."""
+    for attempt in range(_MAX_RETRIES):
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            err_msg = str(exc)
+            is_transient = any(code in err_msg for code in _RETRY_CODES)
+            if is_transient and attempt < _MAX_RETRIES - 1:
+                wait = (attempt + 1) * 15  # 15s, 30s...
+                print(f"[LLM] Lỗi tạm thời. Thử lại sau {wait}s...")
+                time.sleep(wait)
+            else:
+                raise
+\end{lstlisting}
+
+Thay vì dừng toàn bộ hệ thống, khi gặp mã lỗi trên, tiến trình sẽ tạm nghỉ:
+\begin{equation}
+    WaitTime = BaseTime \times 2^{retry\_count} + Jitter
+\end{equation}
+Hệ thống sẽ ngủ từ 15 giây, 30 giây, đến 60 giây và tự động gọi lại API. Điều này đảm bảo tính bền bỉ cho hệ thống khi hoạt động liên tục.
+
+\section{Cài đặt giao diện tương tác người dùng (Web UI)}
+Nhằm mang lại trải nghiệm tiện dụng nhất cho kỹ sư dự toán, một giao diện Web đơn trang (SPA) được xây dựng sử dụng HTML thuần kết hợp framework TailwindCSS.
+\begin{itemize}
+    \item \textbf{Cơ chế kiểm tra dữ liệu thời gian thực:} Nhằm ngăn chặn hiện tượng RAG lấy sai ngữ cảnh do từ khóa quá ngắn (ví dụ người dùng chỉ gõ "D90" thay vì "Ống nhựa uPVC D90"), hệ thống tích hợp JavaScript bắt sự kiện gõ phím. Nếu mô tả dưới 10 ký tự, một cảnh báo chữ vàng sẽ lập tức xuất hiện ngay dưới ô nhập liệu.
+    \item \textbf{Cơ chế hiển thị và bóc tách JSON:} Kết quả từ API được bóc tách và hiển thị dưới dạng các thẻ trực quan. Mức độ tin cậy do AI đánh giá được thể hiện thành một thanh tiến trình, phần lập luận được in đậm, và bảng dữ liệu lịch sử tham chiếu nguồn được liệt kê đầy đủ ngay bên dưới giúp kỹ sư dễ dàng kiểm chứng chéo.
+\end{itemize}

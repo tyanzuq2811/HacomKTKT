@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PriceAdvisor — Tích hợp LLM gợi ý giá (2 phương án)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+body{background:#f1f5f9;color:#1e293b;padding:16px;line-height:1.45}
+.head-title{font-size:16px;font-weight:800}
+.head-sub{font-size:10.5px;color:#64748b;margin-top:1px}
+
+.tabs{display:flex;gap:6px;margin:14px 0 12px;flex-wrap:wrap}
+.tab{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#fff;color:#475569}
+.tab.active{background:#1e293b;color:#fff;border-color:#1e293b}
+.view{display:none}.view.active{display:block}
+
+.zone{border-radius:11px;padding:11px 12px 13px;margin-bottom:10px;border:2px solid}
+.zone-in{background:#f0fdf4;border-color:#86efac}
+.zone-out{background:#fef2f2;border-color:#fca5a5;border-style:dashed}
+.zone-label{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.zin{color:#15803d}.zout{color:#b91c1c}
+
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.box{border-radius:8px;padding:8px 10px;flex:1;min-width:128px;border:1.5px solid #e2e8f0;background:#fff}
+.box.kb{border-color:#8b5cf6;background:#faf5ff}
+.box.llm{border-color:#f59e0b;background:#fffbeb}
+.box.guard{border-color:#ef4444;background:#fff1f2}
+.box.ui{border-color:#0ea5e9;background:#f0f9ff}
+.box.eng{border-color:#fb923c;background:#fff7ed}
+.box-title{font-size:10px;font-weight:700;margin-bottom:3px}
+.box-sub{font-size:9px;color:#64748b;line-height:1.5}
+.badge{display:inline-block;padding:1px 6px;border-radius:8px;font-size:8px;font-weight:700;margin-left:4px;vertical-align:middle}
+.b-kb{background:#ede9fe;color:#6d28d9}.b-llm{background:#fef3c7;color:#92400e}
+.b-loc{background:#dcfce7;color:#166534}.b-ext{background:#fee2e2;color:#b91c1c}
+
+.conn{text-align:center;margin:4px 0;color:#94a3b8;font-size:12px}
+.conn b{font-size:8.5px;color:#64748b;background:#fff;padding:2px 8px;border-radius:8px;border:1px solid #e2e8f0;font-weight:600}
+.cross{text-align:center;margin:6px 0}
+.cross b{font-size:8.5px;color:#b91c1c;background:#fee2e2;padding:3px 10px;border-radius:8px;border:1px dashed #ef4444;font-weight:700}
+
+.note{border-radius:6px;padding:7px 10px;margin-top:9px;font-size:9px;line-height:1.55}
+.note-green{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.note-red{background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5}
+.note-blue{background:#e0f2fe;color:#0c4a6e;border:1px solid #bae6fd}
+
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;font-size:9.5px}
+th,td{border:1px solid #e2e8f0;padding:7px 9px;text-align:left;vertical-align:top}
+th{background:#f8fafc;font-weight:700;font-size:9px}
+td.crit{font-weight:700;color:#334155;background:#fbfdff;width:130px}
+.star{color:#f59e0b;font-weight:700}
+.pick{background:#ecfdf5}
+</style>
+</head>
+<body>
+
+<div class="head-title">PriceAdvisor — Tích hợp LLM gợi ý giá (tham khảo)</div>
+<div class="head-sub">Lớp tư vấn TÁCH RỜI engine rule-based · Kho giá (RAG) luôn nội bộ · chỉ khác nhau ở nơi chạy LLM</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="show('a',this)">A · Self-host</div>
+  <div class="tab" onclick="show('b',this)">B · API ngoài</div>
+  <div class="tab" onclick="show('c',this)">So sánh &amp; chọn</div>
+</div>
+
+<!-- ============ A: SELF-HOST ============ -->
+<div class="view active" id="a">
+  <div class="zone zone-in">
+    <div class="zone-label zin">🔒 Mạng nội bộ công ty — không egress (toàn bộ chạy bên trong)</div>
+
+    <div class="row">
+      <div class="box ui"><div class="box-title" style="color:#0369a1">Web UI</div><div class="box-sub">Cột "Giá gợi ý (tham khảo)"<br>nguồn + độ tin cậy · accept/reject</div></div>
+      <div class="box eng"><div class="box-title" style="color:#c2410c">ComparisonEngine</div><div class="box-sub">Chỉ gọi khi dòng <b>thiếu giá cơ sở 1–4</b><br>async · không chặn pipeline</div></div>
+    </div>
+    <div class="conn">▼ <b>gọi tùy chọn (async)</b> ▼</div>
+
+    <div class="row">
+      <div class="box"><div class="box-title">PriceAdvisor</div><div class="box-sub">Điều phối: retrieval → LLM → validate<br>cache theo norm_name</div></div>
+      <div class="box kb"><div class="box-title" style="color:#5b21b6">Kho giá nội bộ <span class="badge b-kb">RAG</span></div><div class="box-sub">Vector DB: giá trúng thầu lịch sử<br>+ catalogue NCC + dự toán cũ</div></div>
+    </div>
+    <div class="conn">▼ <b>truy vấn ngữ nghĩa (nội bộ)</b> ▼</div>
+
+    <div class="row">
+      <div class="box llm"><div class="box-title" style="color:#92400e">LLM Self-host <span class="badge b-loc">ON-PREM</span></div><div class="box-sub">Qwen2.5 / Llama 3.x (GPU nội bộ)<br>embedding bge-m3 · <b>thấy đủ ngữ cảnh</b></div></div>
+      <div class="box guard"><div class="box-title" style="color:#b91c1c">Validator</div><div class="box-sub">Trả KHOẢNG giá · kiểm hợp lý<br>(đơn vị, KL×ĐG, biên độ)</div></div>
+    </div>
+    <div class="conn">▼ <b>ghi suggested_* (PostgreSQL)</b> ▼</div>
+    <div class="row">
+      <div class="box"><div class="box-title">BOQItem.suggested_*</div><div class="box-sub">low/high · source=LLM_RAG · confidence · reasoning + trích nguồn</div></div>
+    </div>
+  </div>
+
+  <div class="note note-green">✓ Dữ liệu (kể cả giá thật &amp; mô tả đầy đủ) <b>không rời mạng nội bộ</b> → bảo mật cao nhất, đúng nguyên tắc "hồ sơ không rời doanh nghiệp".</div>
+  <div class="note note-blue">⚙️ Chi phí ban đầu cao (server GPU) &amp; cần tự vận hành (MLOps), nhưng chi phí dùng cố định và độ trễ ổn định. Phù hợp <b>production</b>.</div>
+</div>
+
+<!-- ============ B: API NGOÀI ============ -->
+<div class="view" id="b">
+  <div class="zone zone-in">
+    <div class="zone-label zin">🔒 Mạng nội bộ công ty</div>
+
+    <div class="row">
+      <div class="box ui"><div class="box-title" style="color:#0369a1">Web UI</div><div class="box-sub">Cột "Giá gợi ý (tham khảo)"<br>nguồn + độ tin cậy · accept/reject</div></div>
+      <div class="box eng"><div class="box-title" style="color:#c2410c">ComparisonEngine</div><div class="box-sub">Chỉ gọi khi dòng <b>thiếu giá cơ sở 1–4</b><br>async · không chặn pipeline</div></div>
+    </div>
+    <div class="conn">▼ <b>gọi tùy chọn (async)</b> ▼</div>
+
+    <div class="row">
+      <div class="box"><div class="box-title">PriceAdvisor</div><div class="box-sub">Điều phối · cache · validate kết quả về</div></div>
+      <div class="box kb"><div class="box-title" style="color:#5b21b6">Kho giá nội bộ <span class="badge b-kb">RAG</span></div><div class="box-sub"><b>Retrieval xảy ra NỘI BỘ</b><br>Vector DB lịch sử + catalogue</div></div>
+    </div>
+    <div class="conn">▼ <b>retrieval nội bộ → dựng prompt</b> ▼</div>
+
+    <div class="row">
+      <div class="box guard"><div class="box-title" style="color:#b91c1c">Anonymizer + Egress guard <span class="badge b-ext">CHỐT</span></div><div class="box-sub">Chỉ cho qua: mô tả hạng mục + trích kho giá <b>ĐÃ ẨN DANH</b><br>CHẶN: giá NT thật · tên NT · danh tính dự án · file</div></div>
+    </div>
+  </div>
+
+  <div class="cross">▼ <b>chỉ TEXT ẩn danh đi ra internet ▼</b></div>
+
+  <div class="zone zone-out">
+    <div class="zone-label zout">🌐 Internet — dịch vụ ngoài</div>
+    <div class="row">
+      <div class="box llm"><div class="box-title" style="color:#92400e">API LLM ngoài <span class="badge b-ext">EXTERNAL</span></div><div class="box-sub">OpenAI / Claude / Gemini<br>chỉ <b>diễn giải + tổng hợp</b> từ prompt ẩn danh</div></div>
+    </div>
+  </div>
+
+  <div class="cross">▲ <b>trả gợi ý (text) về nội bộ ▲</b></div>
+
+  <div class="zone zone-in">
+    <div class="zone-label zin">🔒 Mạng nội bộ — hậu xử lý</div>
+    <div class="row">
+      <div class="box guard"><div class="box-title" style="color:#b91c1c">Validator</div><div class="box-sub">Kiểm hợp lý · gắn nguồn kho giá nội bộ vào con số</div></div>
+      <div class="box"><div class="box-title">BOQItem.suggested_*</div><div class="box-sub">low/high · source=LLM_RAG · confidence · reasoning</div></div>
+    </div>
+  </div>
+
+  <div class="note note-red">⚠️ Bảo mật phụ thuộc <b>chất lượng ẩn danh</b> + điều khoản nhà cung cấp. Bắt buộc egress guard, audit log mọi lần gọi. KHÔNG bao giờ gửi giá thật/tên NT/dự án/file ra ngoài.</div>
+  <div class="note note-blue">⚙️ Chi phí ban đầu thấp, chất lượng mô hình tốt nhất, NCC lo bảo trì. Phù hợp <b>prototype / đo chất lượng nhanh</b>.</div>
+</div>
+
+<!-- ============ C: SO SÁNH ============ -->
+<div class="view" id="c">
+  <table>
+    <tr><th>Tiêu chí</th><th>A · Self-host</th><th>B · API ngoài</th></tr>
+    <tr class="pick"><td class="crit">Bảo mật hồ sơ thầu</td><td><span class="star">★★★</span> Cao nhất — không rời mạng</td><td><span class="star">★</span> Phụ thuộc ẩn danh + điều khoản NCC</td></tr>
+    <tr><td class="crit">Chất lượng mô hình</td><td><span class="star">★★</span> Khá–tốt (Qwen/Llama)</td><td><span class="star">★★★</span> Tốt nhất (GPT/Claude/Gemini)</td></tr>
+    <tr><td class="crit">Chi phí ban đầu</td><td>Cao (server GPU)</td><td>Thấp</td></tr>
+    <tr><td class="crit">Chi phí vận hành</td><td>Cố định theo hạ tầng</td><td>Biến đổi theo lượng gọi</td></tr>
+    <tr><td class="crit">Độ trễ</td><td>Ổn định nội bộ</td><td>Phụ thuộc mạng/quota</td></tr>
+    <tr><td class="crit">Bảo trì</td><td>Tự lo (MLOps)</td><td>Nhà cung cấp lo</td></tr>
+    <tr><td class="crit">Ngữ cảnh gửi vào LLM</td><td>Đầy đủ</td><td>Tối thiểu, đã ẩn danh</td></tr>
+    <tr class="pick"><td class="crit">Phù hợp nhất</td><td><b>Production</b> (dữ liệu nhạy cảm)</td><td><b>Prototype</b> / đánh giá chất lượng</td></tr>
+  </table>
+
+  <div class="note note-green">✓ <b>Bất biến ở cả hai:</b> Kho giá &amp; retrieval luôn NỘI BỘ; LLM chỉ tư vấn, không quyết; con số gợi ý lấy từ kho giá có nguồn truy vết (không phải LLM tự nghĩ).</div>
+  <div class="note note-blue">💡 <b>Khuyến nghị:</b> Thiết kế PriceAdvisor sau một <b>interface chung</b> để đổi backend (self-host ↔ API ngoài) mà không sửa engine. Dùng B để thử nhanh, chuyển sang A cho production.</div>
+</div>
+
+<script>
+function show(id,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

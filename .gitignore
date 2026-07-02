@@ -8,3 +8,4 @@ runtime/jobs/*
 reports/*.xlsx
 models/*
 !models/.gitkeep
+HACOM_DATA/

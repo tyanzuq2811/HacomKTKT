@@ -1,0 +1,47 @@
+\chapter{TỔNG QUAN BÀI TOÁN}
+\label{ch:chuong1}
+
+\section{Đặt vấn đề}
+Trong bối cảnh nền kinh tế số và Cách mạng Công nghiệp 4.0 đang tác động mạnh mẽ lên mọi lĩnh vực, ngành công nghiệp Xây dựng nói chung và chuyên ngành Kinh tế Xây dựng nói riêng cũng đang trải qua quá trình chuyển đổi số sâu rộng. Quản lý chi phí đầu tư xây dựng, lập dự toán và bóc tách khối lượng vật tư đóng vai trò then chốt quyết định tính khả thi, hiệu quả tài chính và sức cạnh tranh của một doanh nghiệp khi tham gia dự thầu. Đặc biệt, đối với hệ thống Cơ điện (MEP - Mechanical, Electrical, and Plumbing), khối lượng vật tư thường vô cùng đồ sộ, chiếm từ 30\% đến 40\% tổng mức đầu tư của một dự án dân dụng hoặc công nghiệp quy mô lớn.
+
+Mặc dù tầm quan trọng là không thể phủ nhận, quy trình nghiệp vụ truyền thống trong việc thẩm định và tra cứu giá vật tư hiện nay đang bộc lộ những điểm nghẽn nghiêm trọng, kìm hãm năng suất lao động của các kỹ sư kinh tế xây dựng:
+\begin{itemize}
+    \item \textbf{Phân mảnh và phi cấu trúc hóa dữ liệu:} Báo giá lịch sử từ các nhà cung cấp, đối tác, và nhà thầu phụ thường được lưu trữ dưới các định dạng phi cấu trúc hoặc bán cấu trúc (PDF quét, tệp Excel tự do không theo khuôn dạng, hình ảnh). Sự thiếu đồng nhất này tạo ra các "hòn đảo dữ liệu" (data silos) rải rác qua nhiều dự án và nhiều năm, khiến việc kế thừa tri thức tổ chức (organizational knowledge) trở nên vô cùng khó khăn.
+    \item \textbf{Độ trễ trong tra cứu và đối soát kỹ thuật:} Để định giá một hạng mục vật tư mới trong bản vẽ thiết kế, kỹ sư phải thực hiện các thao tác tìm kiếm thủ công trong hàng trăm tệp dữ liệu, đối chiếu chéo hàng loạt thuộc tính kỹ thuật chuyên ngành (ví dụ: cấp điện áp, tiết diện lõi đồng, tiêu chuẩn ống nhựa PN, cấp bảo vệ IP). Quá trình này không chỉ tiêu tốn hàng giờ đồng hồ làm việc cơ học mà còn tiềm ẩn rủi ro sai lệch do sự mệt mỏi và yếu tố chủ quan của con người.
+    \item \textbf{Khuyết thiếu công cụ mô hình hóa định lượng:} Việc không có một cơ chế thống kê và phân tích tự động khiến các kỹ sư khó lòng nắm bắt được biên độ dao động giá (giá trị nhỏ nhất, giá trị lớn nhất, trung vị) của vật tư trên thị trường tại một thời điểm cụ thể. Điều này dẫn đến các quyết định chốt giá dự toán mang tính cảm tính, thiếu cơ sở toán học vững chắc, làm giảm sức cạnh tranh của hồ sơ dự thầu.
+\end{itemize}
+
+Trước sự bứt phá của công nghệ Trí tuệ Nhân tạo (AI), đặc biệt là sự xuất hiện của các Mô hình Ngôn ngữ Lớn (Large Language Models - LLM) với khả năng xử lý ngôn ngữ tự nhiên và suy luận ngữ nghĩa (Semantic Reasoning) vượt trội, bài toán tối ưu hóa quy trình dự toán hoàn toàn có thể được giải quyết. Việc ứng dụng AI không chỉ nhằm giải phóng sức lao động cơ bắp, mà còn nâng cao độ chính xác, tính minh bạch và tốc độ phản hồi cho công tác dự toán - một nhu cầu cấp thiết và là xu thế tất yếu của các doanh nghiệp xây dựng hiện đại.
+
+\section{Mục tiêu của đề tài}
+Xuất phát từ những trăn trở và thách thức thực tiễn nêu trên, nghiên cứu này hướng tới việc phát triển một hệ thống thông minh toàn diện mang tên \textbf{Price Advisor AI}. Hệ thống đóng vai trò như một trợ lý ảo chuyên ngành, có khả năng tiếp nhận các truy vấn bằng ngôn ngữ tự nhiên từ kỹ sư, tự động đối sánh với kho dữ liệu lịch sử khổng lồ và đưa ra khoảng giá đề xuất minh bạch, kèm theo các lập luận logic.
+
+Các mục tiêu cốt lõi của đề tài được xác định cụ thể như sau:
+\begin{enumerate}
+    \item \textbf{Tự động hóa luồng trích xuất và chuẩn hóa dữ liệu (Data Pipeline):} Xây dựng một quy trình xử lý dữ liệu mạnh mẽ để số hóa, làm sạch và chuẩn hóa dữ liệu báo giá từ các tệp Excel lịch sử thành định dạng có cấu trúc, tương thích cao với các thuật toán học máy.
+    \item \textbf{Ứng dụng kiến trúc RAG (Retrieval-Augmented Generation):} Khắc phục hoàn toàn điểm yếu "ảo giác" (Hallucination) của các mô hình sinh văn bản bằng cách tận dụng sức mạnh của cơ sở dữ liệu Vector và các mô hình nhúng (Embeddings) để tìm kiếm ngữ nghĩa chính xác, từ đó cung cấp ngữ cảnh thực tế (Context) cho LLM (Gemini, Gemma) trước khi đưa ra câu trả lời.
+    \item \textbf{Tích hợp cơ sở suy luận toán học thống kê:} Phát triển các module để loại bỏ nhiễu, loại bỏ các giá trị ngoại lai (Outlier) bằng các thuật toán thống kê, giúp giới hạn biên độ giá an toàn, sát với thực tế thị trường.
+    \item \textbf{Thiết kế cơ chế an toàn thông tin và tính bền bỉ (Resilience):} Phát triển thuật toán nhận diện và ẩn danh (Redact) các thông tin nhạy cảm của doanh nghiệp (Egress Guard) trước khi đẩy dữ liệu qua các API đám mây. Đồng thời cài đặt các cơ chế tự động thử lại (Auto-Retry) nhằm chống chịu lỗi giới hạn tốc độ mạng (Rate Limit) trong quá trình xử lý khối lượng dữ liệu lớn.
+    \item \textbf{Giám sát trực quan thông qua công cụ MLOps:} Áp dụng nền tảng Weights \& Biases (W\&B) để thu thập log, đánh giá hiệu năng mô hình (Độ chính xác, Độ trễ) một cách chuyên nghiệp.
+\end{enumerate}
+
+\section{Phạm vi và đối tượng nghiên cứu}
+\begin{itemize}
+    \item \textbf{Đối tượng nghiên cứu:} 
+    \begin{itemize}
+        \item Khối lượng dữ liệu báo giá vật tư cơ điện (MEP) thực tế được thu thập từ các dự án quy mô lớn (dữ liệu được ẩn danh hóa một phần để bảo mật).
+        \item Các mô hình ngôn ngữ lớn như Google Gemini, Google Gemma (truy xuất nội bộ qua Ollama).
+        \item Các kỹ thuật truy xuất thông tin hiện đại (Dense Retrieval) và kỹ thuật thiết kế câu lệnh (Prompt Engineering).
+    \end{itemize}
+    \item \textbf{Phạm vi giới hạn của hệ thống:} 
+    Hệ thống được thiết kế tập trung vào tính năng tư vấn giá và gợi ý khoảng giá dựa trên dữ liệu lịch sử, không thực hiện việc lập toàn bộ dự toán hay tự động bóc tách khối lượng từ bản vẽ CAD/BIM. Phân hệ được đóng gói dưới dạng API Backend (sử dụng FastAPI) và tích hợp giao diện người dùng Web trực quan (HTML/TailwindCSS).
+\end{itemize}
+
+\section{Bố cục của báo cáo}
+Nội dung của báo cáo được tổ chức một cách logic, đi từ nền tảng lý thuyết đến phân tích thiết kế, cài đặt và cuối cùng là đánh giá hiệu năng. Cụ thể gồm 4 chương như sau:
+\begin{itemize}
+    \item \textbf{Chương 1 - Tổng quan bài toán:} Trình bày bối cảnh công nghiệp, những thách thức trong quy trình dự toán truyền thống, lý do chọn đề tài và định hình mục tiêu cũng như phạm vi nghiên cứu.
+    \item \textbf{Chương 2 - Cơ sở lý thuyết và công nghệ:} Đi sâu vào các khái niệm cốt lõi tạo nên hệ thống, bao gồm lý thuyết về Mô hình Ngôn ngữ Lớn (LLM), kiến trúc Transformer, phương pháp Retrieval-Augmented Generation (RAG), biểu diễn không gian Vector và các nền tảng MLOps như Weights \& Biases.
+    \item \textbf{Chương 3 - Phân tích, thiết kế và cài đặt hệ thống:} Mô tả kiến trúc tổng thể dưới góc độ Kỹ thuật Phần mềm (Software Engineering). Phân tích chi tiết các luồng dữ liệu (Ingestion Pipeline, Retrieval Pipeline), các thuật toán kẹp khoảng giá, cơ chế bảo mật Egress Guard và cách thức xây dựng giao diện ứng dụng.
+    \item \textbf{Chương 4 - Thử nghiệm và đánh giá:} Trình bày chi tiết kịch bản Benchmark trên bộ dữ liệu kiểm thử (300 mẫu vật tư). Cung cấp các số liệu định lượng (Accuracy, Latency), phân tích chuyên sâu các nguyên nhân gây sai số (Error Analysis) và rút ra kết luận khoa học.
+\end{itemize}

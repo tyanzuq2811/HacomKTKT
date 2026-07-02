@@ -1,0 +1,211 @@
+\chapter{THỬ NGHIỆM VÀ ĐÁNH GIÁ}
+\label{ch:chuong4}
+
+\section{Môi trường và Phương pháp thử nghiệm}
+
+Quá trình thử nghiệm đánh giá hệ thống được thực hiện thông qua module kiểm thử tích hợp sẵn. Tập dữ liệu thử nghiệm mở rộng bao gồm 500 mẫu vật tư cơ điện được trích xuất ngẫu nhiên từ kho dữ liệu hơn 8.600 mặt hàng thực tế của các dự án công nghiệp. Việc lựa chọn ngẫu nhiên được cố định bởi hạt giống (Seed = 42) nhằm bảo đảm tính tái lập của thí nghiệm qua các phiên chạy khác nhau.
+
+\subsection{Cấu hình phần cứng và phần mềm}
+
+Toàn bộ quá trình kiểm thử được giám sát và ghi nhận tự động bởi nền tảng Weights \& Biases (W\&B). Bảng \ref{tab:hw_config} tổng hợp cấu hình chi tiết của phiên chạy thử nghiệm hiệu năng lớn, được trích xuất trực tiếp từ tệp tin cấu hình hệ thống của lượt chạy chính thức có mã định danh \texttt{k06c1gnt}.
+
+\begin{table}[H]
+    \centering
+    \caption{Cấu hình phần cứng và phần mềm của phiên Benchmark}
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{5cm}|>{\raggedright\arraybackslash}p{9cm}|}
+        \hline
+        \textbf{Thông số} & \textbf{Giá trị} \\
+        \hline
+        Hệ điều hành & Windows 10 (Build 10.0.26200) \\
+        \hline
+        CPU & 6 nhân vật lý / 12 luồng logic \\
+        \hline
+        RAM & 16 GB (15.74 GB khả dụng) \\
+        \hline
+        GPU & NVIDIA GeForce RTX 3050 Laptop GPU (Ampere, 2048 CUDA Cores, 4 GB VRAM) \\
+        \hline
+        CUDA Version & 13.1 \\
+        \hline
+        Python & CPython 3.11.15 (Anaconda) \\
+        \hline
+        W\&B CLI & Phiên bản 0.26.0 \\
+        \hline
+        Mô hình Embedding & BAAI/bge-m3 (1024 chiều) \\
+        \hline
+        Mô hình LLM & Google \texttt{gemma-4-31b-it} (qua API) \\
+        \hline
+        Cơ sở dữ liệu Vector & ChromaDB (Cài đặt cục bộ) \\
+        \hline
+    \end{tabular}
+    \label{tab:hw_config}
+\end{table}
+
+\subsection{Lệnh thực thi và tham số Benchmark}
+
+Phiên Benchmark quy mô lớn được khởi chạy bằng dòng lệnh sau:
+\begin{lstlisting}[language=bash, caption=Lệnh khởi chạy Benchmark 500 mẫu]
+python -m price_advisor benchmark \
+    --csv runtime/hacom_price_refs.csv \
+    -n 500 \
+    --wandb test-benchmark-gemma-31b-500
+\end{lstlisting}
+
+Trong đó:
+\begin{itemize}
+    \item \texttt{--csv}: Đường dẫn đến tệp dữ liệu báo giá gốc (gồm 8.600 dòng thông tin vật tư).
+    \item \texttt{-n 500}: Số lượng mẫu lấy ngẫu nhiên có cố định seed để kiểm thử hiệu năng.
+    \item \texttt{--wandb}: Dự án theo dõi thí nghiệm trên nền tảng W\&B.
+\end{itemize}
+
+\subsection{Phương pháp đánh giá}
+
+Phương pháp đánh giá dựa trên hai tiêu chí kỹ thuật:
+
+\begin{enumerate}
+    \item \textbf{Tỷ lệ thành công:} Tỷ lệ các yêu cầu hoàn thành mà không bị gián đoạn bởi các lỗi kỹ thuật API hay chốt chặn bảo mật từ Egress Guard.
+    \item \textbf{Độ chính xác thực tế:} Đơn giá thực tế nằm trong khoảng dự báo ($P_{low} \leq P_{actual} \leq P_{high}$) sau khi giá thực tế đã được làm tròn phần nguyên để tránh sai số dấu phẩy động.
+\end{enumerate}
+
+\section{Theo dõi và Giám sát thông qua Weights \& Biases (W\&B)}
+
+Toàn bộ quá trình thực thi được gửi về Dashboard của Weights \& Biases theo thời gian thực.
+
+\subsection{Cấu trúc dữ liệu ghi nhận}
+
+Lượt chạy chính thức có mã định danh \texttt{k06c1gnt}, được đồng bộ với commit Git \texttt{6558dda}. Cấu trúc dữ liệu được lưu trữ gồm:
+
+\begin{itemize}
+    \item \textbf{Bảng kết quả chi tiết (bảng W\&B):} File kết quả có kích thước 178.809 bytes chứa 500 hàng dữ liệu ghi nhận chi tiết mô tả, đơn vị, giá thực tế, khoảng gợi ý, trạng thái đúng sai, thời gian phản hồi và lập luận của AI.
+    \item \textbf{Các chỉ số tổng hợp:} Chỉ số \texttt{accuracy\_pct = 94.4\%}, \texttt{avg\_latency = 10.62s}, \texttt{success\_count = 497}, \texttt{error\_count = 3}.
+    \item \textbf{Cấu hình thí nghiệm:} Được lưu trữ trong \texttt{config.yaml} gồm các tham số mô hình và hạt giống.
+\end{itemize}
+
+\subsection{Giá trị của quản lý thí nghiệm học máy trong kiểm thử}
+
+Việc áp dụng W\&B giúp quản lý phiên chạy, so sánh độ chính xác của các phiên bản câu gợi ý và truy vết các ca đoán sai nhanh chóng để cải tiến hệ thống.
+
+\section{Kết quả đánh giá tổng thể (Benchmark 500 mẫu)}
+
+Dữ liệu thu thập từ phiên chạy Benchmark chính thức N=500 cho thấy hệ thống hoạt động với hiệu suất vượt trội. Bảng \ref{tab:benchmark_results} tổng hợp kết quả đo lường chính thức.
+
+\begin{table}[H]
+    \centering
+    \caption{Bảng tóm tắt kết quả Benchmark 500 mẫu vật tư MEP}
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{7cm}|>{\centering\arraybackslash}p{5cm}|}
+        \hline
+        \textbf{Chỉ số đo lường} & \textbf{Kết quả thực tế} \\
+        \hline
+        Tổng số vật tư thử nghiệm (N) & 500 \\
+        \hline
+        Số yêu cầu hoàn thành thành công & 497 (99.4\%) \\
+        \hline
+        Số yêu cầu thất bại & 3 (0.6\%) \\
+        \hline
+        \textbf{Độ chính xác ghi nhận} & \textbf{94.4\%} (469/497) \\
+        \hline
+        Thời gian phản hồi trung bình & 10.62 giây \\
+        \hline
+        Tổng thời gian thực thi & $\approx$ 1.5 giờ \\
+        \hline
+        Run ID (W\&B) & \texttt{k06c1gnt} \\
+        \hline
+    \end{tabular}
+    \label{tab:benchmark_results}
+\end{table}
+
+\subsection{Phân tích độ chính xác đạt được}
+
+Độ chính xác đạt \textbf{94.4\%} trên tập mẫu lớn 500 vật tư (tương ứng 469 ca đoán đúng trên tổng số 497 yêu cầu thành công). Kết quả này tăng đáng kể so với mức \textbf{87.5\%} ở phiên chạy thử nghiệm ban đầu (N=100) nhờ việc sửa lỗi so sánh biên toán học ($\leq$, $\geq$ thay vì $<$, $>$) và cơ chế vô danh hóa mã định danh để tránh kích hoạt nhầm bộ lọc Egress Guard.
+
+Hình \ref{fig:accuracy_chart} biểu diễn trực quan mức độ cải thiện độ chính xác qua các phiên bản nâng cấp câu gợi ý và thuật toán.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            enlargelimits=0.15,
+            ylabel={Độ chính xác (\%)},
+            symbolic x coords={Raw Benchmark, Final Benchmark},
+            xtick=data,
+            nodes near coords,
+            nodes near coords align={vertical},
+            bar width=1.5cm,
+            height=7cm,
+            width=10cm,
+            ymin=75, ymax=100
+        ]
+        \addplot[fill=blue!30] coordinates {(Raw Benchmark, 87.5) (Final Benchmark, 94.4)};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Biểu đồ so sánh độ chính xác giữa phiên bản đầu và phiên bản cải tiến}
+    \label{fig:accuracy_chart}
+\end{figure}
+
+\subsection{Phân bố kết quả thử nghiệm}
+
+Hình \ref{fig:error_pie} minh họa tỷ lệ phân bố các loại kết quả trên tổng 500 mẫu kiểm thử.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \pie[
+            text=legend,
+            radius=3,
+            color={green!60, red!40, orange!50}
+        ]{
+            93.8/Dự đoán đúng (469 mẫu),
+            5.6/Dự đoán sai (28 mẫu),
+            0.6/Lỗi API (3 mẫu)
+        }
+    \end{tikzpicture}
+    \caption{Biểu đồ phân bố kết quả Benchmark 500 mẫu vật tư MEP}
+    \label{fig:error_pie}
+\end{figure}
+
+Hiệu suất dự đoán đạt 93.8% trên tổng số mẫu thực chứng minh tính khả thi cao khi đưa Price Advisor AI hỗ trợ kỹ sư lập giá thầu cơ điện MEP trong thực tế.
+
+\section{Phân tích lỗi chuyên sâu (Error Analysis)}
+
+Trong số 500 mẫu thử nghiệm, ghi nhận có 28 ca dự đoán sai lệch và 3 ca gặp lỗi kỹ thuật API từ phía nhà cung cấp dịch vụ LLM.
+
+\subsection{Nhóm 1: Thiếu hụt ngữ cảnh -- 15/28 ca}
+
+Đây vẫn là lỗi chiếm tỉ lệ cao nhất (53.6% số ca sai). Lỗi xuất hiện khi người dùng đưa vào truy vấn quá vắn tắt như ``D90'', ``D32'' khiến thuật toán truy xuất dày đặc lấy ra hỗn hợp các báo giá nhiễu của nhiều loại thiết bị có cùng kích cỡ (như ống kẽm, van bướm, đai treo).
+
+\textbf{Giải pháp đã áp dụng:} Giao diện ứng dụng được trang bị chốt cảnh báo trực quan. Khi người dùng nhập mô tả dưới 10 ký tự, dòng cảnh báo màu vàng sẽ lập tức xuất hiện khuyên bổ sung chất liệu hoặc nhà sản xuất.
+
+\subsection{Nhóm 2: Kẹp biên quá chặt -- 11/28 ca}
+
+Thuật toán kẹp khoảng giá khi áp dụng hệ số $\epsilon = 0.05$ đã vô tình gạt bỏ một số mức giá thực tế quá cao hoặc quá thấp của các vật tư đặc chủng (như đèn thả trang trí cao cấp có giá gấp nhiều lần đèn thông thường).
+
+\textbf{Đề xuất cải tiến:} Điều chỉnh động tham số $\epsilon$ theo phân nhóm danh mục vật tư trong tương lai.
+
+\subsection{Nhóm 3: Lỗi liên quan Egress Guard -- 2/28 ca}
+
+Các lỗi sập yêu cầu do Egress Guard chặn nhầm mã ID chứa chữ `HACOM` hoặc cụm từ `Nhà thầu` đã hoàn toàn được khắc phục nhờ thuật toán bôi đen văn bản nhạy cảm bằng `***` và vô danh hóa mã tham chiếu sang `REF-X`. Có 2 ca dự đoán sai do thông tin mô tả bị bôi đen quá nhiều làm mất đi từ khóa kỹ thuật cốt lõi.
+
+\subsection{Nhóm 4: Lỗi kỹ thuật API -- 3 ca}
+
+Chỉ còn 3 ca gặp lỗi kết nối API tạm thời (Rate Limit / Timeout) trên tổng số 500 request (tỷ lệ lỗi giảm còn 0.6%) nhờ cơ chế tự động thử lại với thời gian trễ tăng dần.
+
+\begin{table}[H]
+    \centering
+    \caption{Tổng hợp phân loại lỗi trong Benchmark 500 mẫu}
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{5cm}|>{\centering\arraybackslash}p{2cm}|>{\centering\arraybackslash}p{2cm}|>{\raggedright\arraybackslash}p{4cm}|}
+        \hline
+        \textbf{Nhóm lỗi} & \textbf{Số ca} & \textbf{Tỷ lệ} & \textbf{Trạng thái khắc phục} \\
+        \hline
+        Thiếu hụt ngữ cảnh & 15 & 3.0\% & Đã thêm cảnh báo UI \\
+        \hline
+        Kẹp biên quá chặt & 11 & 2.2\% & Đề xuất điều chỉnh động $\epsilon$ \\
+        \hline
+        Egress Guard bôi đen ngữ cảnh & 2 & 0.4\% & Anonymize + Redact thành công \\
+        \hline
+        Lỗi kỹ thuật API & 3 & 0.6\% & Auto-Retry đã xử lý 99.4\% \\
+        \hline
+        \textbf{Tổng cộng} & \textbf{31} & \textbf{6.2\%} & \\
+        \hline
+    \end{tabular}
+    \label{tab:error_analysis}
+\end{table}
