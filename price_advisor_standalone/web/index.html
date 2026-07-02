@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Advisor UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#2563eb',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        .loader { border-top-color: #2563eb; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Smooth scrolling for table */
+        .table-scroll::-webkit-scrollbar { height: 6px; }
+        .table-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .table-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 selection:bg-blue-100 selection:text-blue-900">
+
+<div class="max-w-6xl mx-auto p-6 pt-10">
+    <!-- Header -->
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 mb-3 tracking-tight">Price Advisor AI</h1>
+        <p class="text-slate-500 font-medium">Hệ thống phân tích và gợi ý đơn giá MEP dựa trên dữ liệu RAG</p>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <!-- Left Column: Input Form -->
+        <div class="bg-white rounded-2xl p-6 shadow-xl border border-slate-100 sticky top-6">
+            <h2 class="text-lg font-semibold mb-6 flex items-center gap-2 text-slate-800">
+                <div class="p-2 bg-blue-50 rounded-lg">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                Thông tin truy vấn
+            </h2>
+            
+            <form id="suggest-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Mô tả vật tư / Hạng mục</label>
+                    <textarea id="description" rows="3" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-400" placeholder="VD: Cáp đồng XLPE/PVC 4x25mm2"></textarea>
+                    <p id="desc-warning" class="text-amber-600 text-xs font-medium mt-1.5 hidden flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Mô tả quá ngắn (<10 ký tự) có thể khiến RAG tìm nhầm vật tư. Hãy mô tả chi tiết hơn!
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Đơn vị tính</label>
+                        <input type="text" id="unit" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder-slate-400" placeholder="m, cái, bộ...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Mô hình AI (Backend)</label>
+                        <select id="backend" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer font-medium">
+                            <option value="ollama">Ollama (Local Qwen)</option>
+                            <option value="gemini" selected>Gemini API</option>
+                            <option value="deterministic">Python Only (Fast)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-200 flex justify-center items-center gap-2 mt-2">
+                    <span>Phân tích & Gợi ý giá</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </form>
+        </div>
+
+        <!-- Right Column: Results & States -->
+        <div class="lg:col-span-2 relative min-h-[400px]">
+            
+            <!-- Empty State (Shown initially) -->
+            <div id="empty-state" class="absolute inset-0 bg-white rounded-2xl border border-slate-100 border-dashed shadow-sm flex flex-col items-center justify-center p-8 text-center transition-opacity duration-300">
+                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-700 mb-2">Chưa có dữ liệu phân tích</h3>
+                <p class="text-slate-500 max-w-sm">Nhập thông tin mô tả vật tư và nhấn nút Gợi ý bên trái để hệ thống RAG tìm kiếm và LLM đưa ra kết luận.</p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading" class="hidden absolute inset-0 bg-white/90 backdrop-blur-sm z-10 rounded-2xl flex flex-col items-center justify-center space-y-4 transition-opacity duration-300">
+                <div class="loader ease-linear rounded-full border-4 border-slate-200 h-12 w-12 mb-2"></div>
+                <p class="text-blue-600 font-medium animate-pulse">Đang truy xuất ChromaDB và chờ AI phản hồi...</p>
+            </div>
+
+            <!-- Result Box -->
+            <div id="result-container" class="hidden space-y-6 opacity-0 transition-opacity duration-500">
+                
+                <!-- Top cards: Price & Reasoning -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Price Card -->
+                    <div class="bg-white rounded-2xl p-6 shadow-md border border-slate-100 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
+                        <h3 class="text-sm font-semibold text-slate-500 mb-2 uppercase tracking-wider">Khoảng giá gợi ý</h3>
+                        <div class="flex items-baseline gap-2 mb-5 relative z-10">
+                            <span id="res-price" class="text-3xl font-extrabold text-slate-800 tracking-tight"></span>
+                            <span class="text-slate-500 font-medium">VND</span>
+                        </div>
+                        
+                        <div class="space-y-2 relative z-10">
+                            <div class="flex justify-between text-xs font-bold uppercase tracking-wider">
+                                <span class="text-slate-500">Độ tin cậy</span>
+                                <span id="res-conf-text" class="text-indigo-600"></span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div id="res-conf-bar" class="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-1000 w-0"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reasoning Card -->
+                    <div class="bg-white rounded-2xl p-6 shadow-md border border-slate-100">
+                        <h3 class="text-sm font-semibold text-slate-500 mb-3 flex items-center justify-between uppercase tracking-wider">
+                            <span>Lập luận của AI</span>
+                            <span id="res-backend" class="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-bold"></span>
+                        </h3>
+                        <p id="res-reasoning" class="text-slate-700 text-sm leading-relaxed"></p>
+                        <div id="res-warnings" class="mt-4 space-y-1 hidden"></div>
+                    </div>
+                </div>
+
+                <!-- References Table -->
+                <div class="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            Dữ liệu tham chiếu (RAG)
+                        </h3>
+                        <span id="ref-count" class="text-xs font-semibold px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full"></span>
+                    </div>
+                    <div class="overflow-x-auto table-scroll">
+                        <table class="w-full text-sm text-left whitespace-nowrap">
+                            <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-3 font-semibold">Nhà thầu & File</th>
+                                    <th class="px-6 py-3 font-semibold">Mô tả vật tư</th>
+                                    <th class="px-6 py-3 font-semibold text-right">Đơn giá (VND)</th>
+                                    <th class="px-6 py-3 font-semibold">Thương hiệu</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ref-tbody" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Box -->
+            <div id="error-container" class="hidden bg-rose-50 rounded-2xl p-6 border border-rose-200 mt-4">
+                <h3 class="text-rose-700 font-bold flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Đã xảy ra lỗi
+                </h3>
+                <p id="error-msg" class="text-rose-600 text-sm font-medium"></p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const formatMoney = (n) => new Intl.NumberFormat('vi-VN').format(n);
+
+    document.getElementById('description').addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        const warn = document.getElementById('desc-warning');
+        if (val.length > 0 && val.length < 10) {
+            warn.classList.remove('hidden');
+        } else {
+            warn.classList.add('hidden');
+        }
+    });
+
+    document.getElementById('suggest-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const desc = document.getElementById('description').value;
+        const unit = document.getElementById('unit').value;
+        const backend = document.getElementById('backend').value;
+        const btn = document.getElementById('submit-btn');
+
+        // UI States
+        document.getElementById('empty-state').classList.add('hidden');
+        document.getElementById('result-container').classList.add('hidden');
+        document.getElementById('result-container').classList.remove('opacity-100');
+        document.getElementById('error-container').classList.add('hidden');
+        document.getElementById('loading').classList.remove('hidden');
+        
+        btn.disabled = true;
+        btn.innerHTML = `<div class="loader ease-linear rounded-full border-2 border-white border-t-transparent h-5 w-5"></div><span>Đang xử lý...</span>`;
+        btn.classList.add('opacity-80', 'cursor-not-allowed');
+
+        try {
+            const res = await fetch('/api/suggest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: desc, unit: unit, backend: backend })
+            });
+            const data = await res.json();
+
+            document.getElementById('loading').classList.add('hidden');
+
+            if (data.status === 'error' || !res.ok) {
+                document.getElementById('error-container').classList.remove('hidden');
+                document.getElementById('error-msg').innerText = data.error?.error || data.detail || "Lỗi không xác định";
+            } else {
+                const sug = data.suggestion;
+                const refs = data.references;
+
+                // Fill UI
+                document.getElementById('res-price').innerText = `${formatMoney(sug.price_low)} - ${formatMoney(sug.price_high)}`;
+                document.getElementById('res-reasoning').innerText = sug.reasoning;
+                document.getElementById('res-backend').innerText = sug.backend;
+                
+                const confPct = Math.round(sug.confidence * 100);
+                document.getElementById('res-conf-text').innerText = `${confPct}%`;
+                
+                // Show container with fade in
+                const resultBox = document.getElementById('result-container');
+                resultBox.classList.remove('hidden');
+                // trigger reflow
+                void resultBox.offsetWidth;
+                resultBox.classList.add('opacity-100');
+
+                // Animate bar
+                document.getElementById('res-conf-bar').style.width = '0%';
+                setTimeout(() => {
+                    document.getElementById('res-conf-bar').style.width = `${confPct}%`;
+                }, 100);
+
+                // Warnings
+                const warnBox = document.getElementById('res-warnings');
+                if (sug.warnings && sug.warnings.length > 0) {
+                    warnBox.innerHTML = sug.warnings.map(w => `
+                        <div class="flex items-start gap-2 p-2 bg-amber-50 rounded-lg text-amber-700 text-xs font-medium">
+                            <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <span>${w}</span>
+                        </div>
+                    `).join('');
+                    warnBox.classList.remove('hidden');
+                } else {
+                    warnBox.classList.add('hidden');
+                }
+
+                // References Table
+                document.getElementById('ref-count').innerText = `${refs.length} kết quả`;
+                const tbody = document.getElementById('ref-tbody');
+                tbody.innerHTML = refs.map(r => `
+                    <tr class="hover:bg-blue-50/50 transition-colors">
+                        <td class="px-6 py-3.5">
+                            <span class="font-bold text-slate-700 block">${r.metadata.bidder || 'Unknown'}</span>
+                            <span class="text-[11px] font-medium text-slate-500">${r.metadata.sheet || ''}</span>
+                        </td>
+                        <td class="px-6 py-3.5 max-w-sm whitespace-normal">
+                            <p class="text-slate-600 line-clamp-2 leading-relaxed" title="${r.description}">${r.description}</p>
+                        </td>
+                        <td class="px-6 py-3.5 text-right font-bold text-slate-800">
+                            ${formatMoney(r.price)}
+                        </td>
+                        <td class="px-6 py-3.5">
+                            <span class="inline-block px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-semibold">${r.metadata.brand || '-'}</span>
+                            <div class="text-[10px] text-slate-400 mt-1 uppercase tracking-wide font-medium">${r.metadata.origin || ''}</div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch (err) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error-container').classList.remove('hidden');
+            document.getElementById('error-msg').innerText = "Mất kết nối đến server. Đảm bảo uvicorn đang chạy.";
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<span>Phân tích & Gợi ý giá</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>`;
+            btn.classList.remove('opacity-80', 'cursor-not-allowed');
+        }
+    });
+</script>
+</body>
+</html>

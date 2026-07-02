@@ -1,0 +1,17 @@
+{"time":"2026-06-30T19:29:22.4788036+07:00","level":"INFO","msg":"wandb-core"}
+{"time":"2026-06-30T19:29:22.4804292+07:00","level":"INFO","msg":"stream: starting","core version":"0.26.0"}
+{"time":"2026-06-30T19:29:23.385643+07:00","level":"INFO","msg":"stream: created new stream","id":"oriwirim"}
+{"time":"2026-06-30T19:29:23.385643+07:00","level":"INFO","msg":"handler: started"}
+{"time":"2026-06-30T19:29:23.387291+07:00","level":"INFO","msg":"stream: started"}
+{"time":"2026-06-30T19:29:23.387291+07:00","level":"INFO","msg":"sender: started"}
+{"time":"2026-06-30T19:29:23.387291+07:00","level":"INFO","msg":"writer: started","stream_id":"oriwirim"}
+{"time":"2026-06-30T19:29:25.9746357+07:00","level":"INFO","msg":"filestream: sending request","total_files":1,"console_offset":0,"console_lines":1}
+{"time":"2026-06-30T19:29:26.5903794+07:00","level":"INFO","msg":"filestream: request sent","status":"200 OK"}
+{"time":"2026-06-30T19:29:32.831258+07:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2026-06-30T19:29:32.831258+07:00","level":"INFO","msg":"filestream: sending request","total_files":3,"history_offset":0,"history_lines":1,"console_offset":1,"console_lines":2,"uploaded_len":6,"complete":true,"exit_code":0}
+{"time":"2026-06-30T19:29:33.4523963+07:00","level":"INFO","msg":"filestream: request sent","status":"200 OK"}
+{"time":"2026-06-30T19:29:33.4545626+07:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2026-06-30T19:29:33.4583357+07:00","level":"INFO","msg":"stream: closing"}
+{"time":"2026-06-30T19:29:33.4583357+07:00","level":"INFO","msg":"handler: closed"}
+{"time":"2026-06-30T19:29:33.4598626+07:00","level":"INFO","msg":"sender: closed"}
+{"time":"2026-06-30T19:29:33.4598626+07:00","level":"INFO","msg":"stream: closed"}

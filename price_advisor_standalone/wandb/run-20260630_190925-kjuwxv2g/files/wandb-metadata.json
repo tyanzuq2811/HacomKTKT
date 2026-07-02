@@ -1,0 +1,47 @@
+{
+  "os":  "Windows-10-10.0.26200-SP0",
+  "python":  "CPython 3.11.15",
+  "startedAt":  "2026-06-30T12:09:25.437338Z",
+  "args":  [
+    "benchmark",
+    "--csv",
+    "runtime\\hacom_price_refs.csv",
+    "-n",
+    "20",
+    "--wandb",
+    "test-benchmark-gemini-3"
+  ],
+  "program":  "-m price_advisor.__main__",
+  "git":  {
+    "remote":  "https://github.com/tyanzuq2811/HacomKTKT.git",
+    "commit":  "6558ddabb223bce7648cf0455493bf7816fec10a"
+  },
+  "email":  "dung28112005@gmail.com",
+  "root":  "D:\\Intern_LAB\\Million_Dolar_Rearch\\HacomKTKT\\price_advisor_standalone",
+  "host":  "TYANZUQ-2811",
+  "executable":  "C:\\Users\\Lapto\\anaconda3\\envs\\deep_learning\\python.exe",
+  "cpu_count":  6,
+  "cpu_count_logical":  12,
+  "gpu":  "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "209714147328",
+      "used":  "138250452992"
+    }
+  },
+  "memory":  {
+    "total":  "16905977856"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA GeForce RTX 3050 Laptop GPU",
+      "memoryTotal":  "4294967296",
+      "cudaCores":  2048,
+      "architecture":  "Ampere",
+      "uuid":  "GPU-ab33e15b-2529-4bee-09e7-ad277000be4f"
+    }
+  ],
+  "cudaVersion":  "13.1",
+  "writerId":  "c0tcujlrrcl179olblwguyx8spvxakf7"
+}

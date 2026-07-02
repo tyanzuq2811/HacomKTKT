@@ -1,0 +1,86 @@
+_wandb:
+    value:
+        cli_version: 0.26.0
+        e:
+            1iifomp916xd114vrwh9eha3i59d9ubn:
+                args:
+                    - benchmark
+                    - --csv
+                    - runtime\hacom_price_refs.csv
+                    - -n
+                    - "100"
+                    - --wandb
+                    - test-benchmark-gemma-31b
+                cpu_count: 6
+                cpu_count_logical: 12
+                cudaVersion: "13.1"
+                disk:
+                    /:
+                        total: "209714147328"
+                        used: "138250502144"
+                email: dung28112005@gmail.com
+                executable: C:\Users\Lapto\anaconda3\envs\deep_learning\python.exe
+                git:
+                    commit: 6558ddabb223bce7648cf0455493bf7816fec10a
+                    remote: https://github.com/tyanzuq2811/HacomKTKT.git
+                gpu: NVIDIA GeForce RTX 3050 Laptop GPU
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ampere
+                      cudaCores: 2048
+                      memoryTotal: "4294967296"
+                      name: NVIDIA GeForce RTX 3050 Laptop GPU
+                      uuid: GPU-ab33e15b-2529-4bee-09e7-ad277000be4f
+                host: TYANZUQ-2811
+                memory:
+                    total: "16905977856"
+                os: Windows-10-10.0.26200-SP0
+                program: -m price_advisor.__main__
+                python: CPython 3.11.15
+                root: D:\Intern_LAB\Million_Dolar_Rearch\HacomKTKT\price_advisor_standalone
+                startedAt: "2026-06-30T12:29:20.135808Z"
+                writerId: 1iifomp916xd114vrwh9eha3i59d9ubn
+        m: []
+        python_version: 3.11.15
+        t:
+            "1":
+                - 1
+                - 5
+                - 11
+                - 41
+                - 49
+                - 51
+                - 53
+                - 71
+                - 75
+                - 92
+            "2":
+                - 1
+                - 5
+                - 11
+                - 41
+                - 49
+                - 51
+                - 53
+                - 71
+                - 75
+                - 92
+            "3":
+                - 2
+                - 13
+                - 16
+            "4": 3.11.15
+            "5": 0.26.0
+            "6": 5.8.0
+            "8":
+                - 3
+            "12": 0.26.0
+            "13": windows-amd64
+backend:
+    value: gemini
+model:
+    value: gemma-4-31b-it
+n_samples:
+    value: 100
+seed:
+    value: 42

@@ -1,0 +1,7 @@
+ref_id,description,unit,price,source,source_type,observed_at
+PR-2024-08-I2,Cáp đồng XLPE/PVC 4x25mm2,m,104000,Gói cơ điện 2024,historical_bid,2024-08-15
+PR-2023-03-I5,Cáp điện đồng cách điện XLPE 4 x 25 mm2,m,98500,Gói cơ điện 2023,historical_bid,2023-03-20
+CAT-2026-CABLE-425,Cáp đồng 4x25mm2,m,110000,Catalogue NCC,catalogue,2026-01-10
+PR-2024-PUMP-01,Bơm nước sinh hoạt Q=15m3/h H=35m,bộ,18500000,Gói cấp thoát nước 2024,historical_bid,2024-06-01
+CAT-2026-PUMP-15,Bơm nước trục ngang 15m3/h cột áp 35m,bộ,19800000,Catalogue NCC,catalogue,2026-02-05
+
