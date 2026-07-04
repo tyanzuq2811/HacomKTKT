@@ -4,7 +4,7 @@
 ---
 
 ## 1. TỔNG QUAN HỆ THỐNG
-Hệ thống **Price Advisor AI** được thiết kế để hỗ trợ các kỹ sư dự toán tự động tra cứu, đánh giá và đề xuất khoảng đơn giá hợp lý cho các hạng mục vật tư MEP (Cơ điện). Hệ thống kết hợp sức mạnh của **Cơ sở dữ liệu Vector (ChromaDB)** chạy cục bộ và **Mô hình ngôn ngữ lớn thương mại (Google Gemini 1.5 Flash)** thông qua API đám mây, giúp tối ưu hóa chi phí vận hành, tốc độ xử lý nhanh và độ chính xác lập luận cao.
+Hệ thống **Price Advisor AI** được thiết kế để hỗ trợ các kỹ sư dự toán tự động tra cứu, đánh giá và đề xuất khoảng đơn giá hợp lý cho các hạng mục vật tư MEP (Cơ điện). Hệ thống kết hợp sức mạnh của **Cơ sở dữ liệu Vector (ChromaDB)** chạy cục bộ và **Mô hình ngôn ngữ lớn thương mại (Google Gemini 3.5 Flash)** thông qua API đám mây, giúp tối ưu hóa chi phí vận hành, tốc độ xử lý nhanh và độ chính xác lập luận cao.
 
 ---
 
@@ -66,7 +66,7 @@ flowchart TD
     end
 
     subgraph CloudAPI ["SUY LUẬN QUA API THƯƠNG MẠI (GOOGLE CLOUD)"]
-        L -->|10. HTTPS Request| M[Gemini 1.5 Flash API]
+        L -->|10. HTTPS Request| M[Gemini 3.5 Flash API]
         M -->|11. Ép khuôn JSON qua response_schema| N(JSON Kết quả thô)
     end
 
@@ -124,7 +124,7 @@ flowchart TD
 *   **Chức năng:** Lọc sạch thông tin nhạy cảm của doanh nghiệp trước khi gửi lên mạng Internet.
 *   **Cách xử lý:** Rà soát toàn bộ prompt bằng biểu thức chính quy (Regex). Nếu phát hiện chứa từ khóa trong danh sách đen như "HACOM", tên các nhà thầu phụ (Linh Anh, Searefico...), nó sẽ thay thế bằng ký tự che giấu `***` và đổi ID dòng báo giá sang dạng `REF-X`. Điều này ngăn ngừa hoàn toàn nguy cơ rò rỉ thông tin nội bộ của công ty lên Google Cloud API.
 
-### Khối 7: Commercial Inference Engine (Google Gemini 1.5 Flash API)
+### Khối 7: Commercial Inference Engine (Google Gemini 3.5 Flash API)
 *   **Chức năng:** Đọc hiểu ngữ cảnh RAG, phân tích xu hướng giá và đưa ra lý do lập luận bằng tiếng Việt.
 *   **Cách xử lý:** 
     *   Gọi thư viện `google-genai` truyền Prompt đã được lọc bảo mật lên đám mây.
