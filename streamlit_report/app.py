@@ -111,11 +111,12 @@ st.markdown('<p class="title-gradient">ỨNG DỤNG RAG VÀ LLM TRONG TỰ ĐỘ
 st.markdown("<p style='color:#64748b; font-size:1.1rem; font-weight:500; margin-top:-10px; margin-bottom:25px;'>Báo cáo kết quả nghiên cứu và ứng dụng thực nghiệm hệ thống Price Advisor AI</p>", unsafe_allow_html=True)
 
 # Tabs
-tab_overview, tab_dataset, tab_benchmark, tab_demo = st.tabs([
+tab_overview, tab_dataset, tab_benchmark, tab_demo, tab_future = st.tabs([
     "📂 Tổng quan Kiến trúc", 
     "📊 Bộ dữ liệu MEP", 
     "📈 Kết quả Weights & Biases", 
-    "⚡ Trải nghiệm Gợi ý Giá (Demo)"
+    "⚡ Trải nghiệm Gợi ý Giá (Demo)",
+    "🚀 Hướng phát triển Egress Guard"
 ])
 
 # ----------------------------------------------------
@@ -146,6 +147,7 @@ with tab_overview:
         st.markdown("""
         *   **Nhiệm vụ:** Đọc và làm sạch dữ liệu Excel chào thầu thô.
         *   **Cách hoạt động:** Loại bỏ các dòng tiêu đề phụ, dòng rác, tự động quy đổi và chuẩn hóa Đơn vị tính (ĐVT) về chuẩn chung (mét, cái, bộ, kg...), lọc bỏ các giá trị đơn giá bất thường (quá nhỏ < 500đ hoặc quá lớn > 5 tỷ).
+        *   **Ví dụ trực quan:** Dòng Excel chứa `"  Cáp điện đồng 4x25   "` và ĐVT `" Mét  "`, đơn giá `"105.000"` $\\rightarrow$ Chuẩn hóa thành: tên `"Cáp điện đồng 4x25"`, ĐVT `"m"`, đơn giá `105000.0` (dạng số thực).
         """)
         
     st.markdown("<div style='text-align: center; color: #2563eb; font-size: 1.8rem; font-weight: bold; margin: -10px 0 -10px 0;'>▼</div>", unsafe_allow_html=True)
@@ -156,6 +158,7 @@ with tab_overview:
         st.markdown("""
         *   **Nhiệm vụ:** Biến đổi văn bản thành Vector toán học.
         *   **Cách hoạt động:** Sử dụng mô hình local mã nguồn mở **BAAI/bge-m3** chạy trên GPU để chuyển đổi các chuỗi mô tả vật tư MEP thành các vector số học 1024 chiều chứa đựng ý nghĩa ngữ nghĩa (Semantic).
+        *   **Ví dụ trực quan:** Chuỗi mô tả `"Cáp đồng XLPE 4x25mm2"` $\\rightarrow$ Chuyển thành một mảng vector gồm 1024 số thực liên tục `[-0.012, 0.084, ..., 0.003]` đại diện cho tọa độ ngữ nghĩa của nó trong không gian vector.
         """)
         
     st.markdown("<div style='text-align: center; color: #2563eb; font-size: 1.8rem; font-weight: bold; margin: -10px 0 -10px 0;'>▼</div>", unsafe_allow_html=True)
@@ -166,6 +169,7 @@ with tab_overview:
         st.markdown("""
         *   **Nhiệm vụ:** Lưu trữ kho tri thức và tìm kiếm tương đồng.
         *   **Cách hoạt động:** Sử dụng cơ sở dữ liệu vector **ChromaDB** chạy local. Khi kỹ sư nhập mô tả vật tư mới, ChromaDB sẽ so sánh khoảng cách vector để tìm ra **Top K** (mặc định K=5) dòng báo giá lịch sử giống nhất về mặt ngữ nghĩa.
+        *   **Ví dụ trực quan:** Tra cứu `"Cáp đồng 4x25mm2"` $\\rightarrow$ ChromaDB tính toán khoảng cách cosine để tìm ra 5 dòng báo giá cáp đồng tương tự nhất trong quá khứ (ví dụ: cáp Cadisun 4x25, cáp Taisin 4x25...).
         """)
         
     st.markdown("<div style='text-align: center; color: #2563eb; font-size: 1.8rem; font-weight: bold; margin: -10px 0 -10px 0;'>▼</div>", unsafe_allow_html=True)
@@ -176,6 +180,7 @@ with tab_overview:
         st.markdown("""
         *   **Nhiệm vụ:** Lọc cứng đơn vị tính để đảm bảo tính nhất quán.
         *   **Cách hoạt động:** Thuật toán Python tự động so sánh ĐVT của yêu cầu tra cứu với ĐVT của các tài liệu tham chiếu RAG. Loại bỏ hoàn toàn các dòng tham chiếu khác ĐVT (ví dụ: yêu cầu tra cứu theo 'mét' nhưng RAG trả về tài liệu tính theo 'cuộn' hoặc 'cái').
+        *   **Ví dụ trực quan:** Yêu cầu tra cứu cáp theo đơn vị `"m"`. RAG trả về 5 dòng tham chiếu, trong đó có 4 dòng đơn vị `"m"` và 1 dòng đơn vị `"cuộn"`. Thuật toán sẽ lọc bỏ dòng `"cuộn"`, chỉ giữ lại 4 dòng đơn vị `"m"`.
         """)
         
     st.markdown("<div style='text-align: center; color: #2563eb; font-size: 1.8rem; font-weight: bold; margin: -10px 0 -10px 0;'>▼</div>", unsafe_allow_html=True)
@@ -186,6 +191,7 @@ with tab_overview:
         st.markdown("""
         *   **Nhiệm vụ:** Tính toán các chỉ số thống kê thực tế.
         *   **Cách hoạt động:** Python tự tính toán các giá trị Min, Max, và Median (trung vị) của khoảng giá thực tế từ ngữ cảnh RAG trước. Các con số này sẽ được đưa thẳng vào Prompt của LLM để AI không phải làm toán cộng trừ nhân chia (tránh sai sót tính toán của LLM).
+        *   **Ví dụ trực quan:** Từ 4 dòng tham chiếu có đơn giá là `98.000, 102.000, 105.000, 110.000` $\\rightarrow$ Tự động tính trước: `Min = 98.000`, `Max = 110.000`, `Median = 103.500` và gửi các chỉ số này kèm theo prompt.
         """)
         
     st.markdown("<div style='text-align: center; color: #2563eb; font-size: 1.8rem; font-weight: bold; margin: -10px 0 -10px 0;'>▼</div>", unsafe_allow_html=True)
@@ -196,6 +202,7 @@ with tab_overview:
         st.markdown("""
         *   **Nhiệm vụ:** Bảo mật thông tin nhạy cảm của doanh nghiệp.
         *   **Cách hoạt động:** Rà soát toàn bộ văn bản RAG bằng biểu thức chính quy (Regex). Tự động thay thế tên các dự án hoặc nhà thầu nội bộ (ví dụ: "HACOM Mall", "Linh Anh"...) thành ký tự ẩn danh `***` hoặc `REF-X` trước khi gửi lên API đám mây của Google.
+        *   **Ví dụ trực quan:** Chuỗi prompt chứa *"Dự án HACOM Mall, nhà thầu Searefico báo giá"* $\\rightarrow$ Tự động đổi thành *"Dự án \*\*\*, nhà thầu \*\*\* báo giá"* và mã hóa tên tài liệu thầu gốc thành *"REF-1"* trước khi gửi lên API đám mây.
         """)
         
     st.markdown("<div style='text-align: center; color: #2563eb; font-size: 1.8rem; font-weight: bold; margin: -10px 0 -10px 0;'>▼</div>", unsafe_allow_html=True)
@@ -206,6 +213,7 @@ with tab_overview:
         st.markdown("""
         *   **Nhiệm vụ:** Phân tích logic ngữ cảnh và đề xuất giá.
         *   **Cách hoạt động:** Gọi API thương mại **Gemini 3.5 Flash** truyền prompt đã ẩn danh. Sử dụng tính năng **Native Structured Outputs (Pydantic Schema)** để ép buộc AI trả về đúng cấu trúc JSON gồm: giá thấp, giá cao, độ tin cậy và lý giải chi tiết bằng tiếng Việt.
+        *   **Ví dụ trực quan:** AI phân tích prompt ẩn danh và trả về JSON có cấu trúc: `{"price_low": 100000, "price_high": 108000, "confidence": 0.95, "reasoning": "Mức giá đề xuất nằm trong khoảng an toàn của các nhà thầu..."}`.
         """)
         
     st.markdown("<div style='text-align: center; color: #2563eb; font-size: 1.8rem; font-weight: bold; margin: -10px 0 -10px 0;'>▼</div>", unsafe_allow_html=True)
@@ -216,6 +224,7 @@ with tab_overview:
         st.markdown("""
         *   **Nhiệm vụ:** Chống ảo giác (hallucination) giá trị của AI.
         *   **Cách hoạt động:** Thuật toán Python tự động tính biên an toàn động $\\epsilon$ (từ 5% đến 25%) dựa trên phân phối của context. Nếu khoảng giá đề xuất của AI vượt ra ngoài vùng an toàn thực tế, thuật toán sẽ tự động kéo giá trị đó về biên an toàn gần nhất.
+        *   **Ví dụ trực quan:** AI đề xuất giá thấp nhất là `80.000 VNĐ`. Nhưng khoảng an toàn tính từ dữ liệu thực tế là `[98.000 - 110.000]`. Với dung sai 5%, biên tối thiểu cho phép là `93.100 VNĐ`. Hệ thống tự động kẹp giá thấp nhất từ `80.000` về `93.100 VNĐ`.
         """)
         
     st.markdown("<div style='text-align: center; color: #2563eb; font-size: 1.8rem; font-weight: bold; margin: -10px 0 -10px 0;'>▼</div>", unsafe_allow_html=True)
@@ -226,6 +235,7 @@ with tab_overview:
         st.markdown("""
         *   **Nhiệm vụ:** Tương tác với người dùng (Kỹ sư dự toán).
         *   **Cách hoạt động:** Giao diện Web được xây dựng tối giản, trực quan, cho phép kỹ sư nhập vật tư cần tra cứu, chọn backend AI xử lý, hiển thị kết quả phân tích giá kèm bảng đối chiếu các dòng báo giá lịch sử gốc.
+        *   **Ví dụ trực quan:** Kỹ sư nhập tên cáp trên trình duyệt và lập tức nhận được hộp kết quả đề xuất khoảng giá `93.100 - 108.000 VNĐ` kèm biểu đồ so sánh trực quan và link Weights & Biases kiểm chứng.
         """)
 
 
@@ -440,3 +450,68 @@ with tab_demo:
                             st.code(traceback.format_exc())
         else:
             st.info("Nhập các thông tin bên trái và nhấn nút 'Phân tích & Tư vấn giá' để bắt đầu demo trực quan.")
+
+
+# ----------------------------------------------------
+# TAB 5: HƯỚNG PHÁT TRIỂN EGRESS GUARD
+# ----------------------------------------------------
+with tab_future:
+    st.markdown("### 🚀 Hướng phát triển: Bảo mật thông tin Egress Guard thế hệ mới")
+    st.markdown("""
+    Trong hệ thống RAG, **Egress Guard** đóng vai trò chốt chặn an ninh, đảm bảo không rò rỉ dữ liệu thương mại nhạy cảm lên Cloud AI. 
+    Tuy nhiên, cơ chế lọc Regex thông thường hiện tại có nhược điểm lớn: **bị mất ngữ cảnh (Đồng hóa nhà thầu thành `***`)** hoặc **xóa nhầm ký hiệu thương mại**.
+    
+    Dưới đây là thiết kế kiến trúc cải tiến thông minh hơn để khắc phục các hạn chế này:
+    """)
+    
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        st.subheader("1. Phân hạng Nhà thầu (Contractor Tiering)")
+        st.markdown("""
+        *   **Vấn đề hiện tại:** Biến tất cả tên nhà thầu thành `***`. LLM không biết dòng báo giá nào đến từ đơn vị cao cấp hay giá rẻ để phân tích biên độ giá.
+        *   **Giải pháp mới:** Phân hạng nhà thầu thành các phân khúc trong PostgreSQL (`Tier 1 - Cao cấp`, `Tier 2 - Trung cấp`, `Tier 3 - Phổ thông`).
+        *   **Hiệu quả:** AI bảo toàn được bối cảnh thị trường để suy luận chính xác đơn giá mà không làm rò rỉ tên nhà thầu thực tế.
+        """)
+        
+    with col_f2:
+        st.subheader("2. Màng lọc Thông minh (Brand Whitelisting & Placeholder)")
+        st.markdown("""
+        *   **Vấn đề hiện tại:** Dùng Regex thô dễ xóa mất từ khóa kỹ thuật cốt lõi (ví dụ: các thương hiệu lớn hoặc mã kích thước D90, D32).
+        *   **Giải pháp mới:**
+            1.  **Danh sách trắng (Whitelist):** Thiết lập tệp `mep_brands.json` lưu giữ các hãng đại trà (Tiền Phong, Cadisun, Sino...) không cho phép xóa.
+            2.  **Đặt tên thuộc tính thay vì xóa trắng:** Chuyển đổi tên dự án nội bộ nhạy cảm thành mô tả bản chất như `[Thương hiệu CĐT chỉ định]` thay vì `***`.
+        """)
+
+    st.markdown("---")
+    st.subheader("⚡ Mô phỏng trực quan cơ chế Ẩn danh thông minh (Interactive Demo)")
+    
+    # Text input mẫu để người dùng thử nghiệm
+    default_text = "Dự án HACOM Mall sử dụng Ống nhựa uPVC nhập khẩu cao cấp HACOM-D90 (giá 150.000đ) do Searefico chào thầu, và Ống nhựa uPVC Tiền Phong (giá 50.000đ) do nhà thầu Linh Anh báo giá."
+    input_sim = st.text_area("Văn bản thô chứa dữ liệu nhạy cảm đầu vào:", value=default_text, height=100)
+    
+    if st.button("Chạy thử nghiệm Bộ ẩn danh Egress Guard 🔍"):
+        # Phép thế thô sơ
+        naive_text = input_sim.replace("HACOM Mall", "***").replace("HACOM-D90", "***").replace("Searefico", "***").replace("Linh Anh", "***")
+        # Phép thế thông minh
+        smart_text = input_sim.replace("HACOM Mall", "[Dự án Nội bộ]").replace("HACOM-D90", "[Thương hiệu CĐT chỉ định]-D90").replace("Searefico", "[Nhà thầu Hạng 1 - Cao cấp]").replace("Linh Anh", "[Nhà thầu Hạng 3 - Phổ thông]")
+        
+        col_res_f1, col_res_f2 = st.columns(2)
+        with col_res_f1:
+            st.markdown("#### 🔴 Ẩn danh thô sơ (Hiện tại)")
+            st.code(naive_text, language="text")
+            st.error("""
+            **Hạn chế:** 
+            * Mất hoàn toàn ngữ cảnh thương hiệu và nhà thầu.
+            * AI không biết mức giá 150.000đ là đắt hay rẻ so với 50.000đ vì các đối thể đều bị đánh dấu `***`.
+            """)
+            
+        with col_res_f2:
+            st.markdown("#### 🟢 Ẩn danh thông minh (Đề xuất mới)")
+            st.code(smart_text, language="text")
+            st.success("""
+            **Ưu điểm:**
+            * Bảo mật tuyệt đối (tên Searefico, Linh Anh, HACOM đã được giấu sạch).
+            * Giữ nguyên mã kỹ thuật cốt lõi (Tiền Phong, D90).
+            * AI hiểu được mức giá 150.000đ là hợp lý vì đó là hàng do Chủ đầu tư chỉ định lắp cho Dự án nội bộ từ Nhà thầu cao cấp.
+            """)
+
