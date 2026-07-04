@@ -68,7 +68,7 @@ OLLAMA_MODEL=qwen2.5:14b-instruct
 
 ---
 
-## 3. Triển khai Code
+    ## 3. Triển khai Code
 
 ### 3.1 Pydantic Schema cho Structured Output (`price_advisor/schemas.py`)
 ```python

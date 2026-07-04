@@ -9,3 +9,8 @@ reports/*.xlsx
 models/*
 !models/.gitkeep
 HACOM_DATA/
+
+# Wandb logs
+wandb/
+**/wandb/
+*.log

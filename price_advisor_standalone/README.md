@@ -418,3 +418,92 @@ price_advisor_standalone/
 | `python -m price_advisor suggest --desc "..." --unit m` | Gợi ý giá cho 1 hạng mục | Mỗi khi cần |
 | `python -m price_advisor benchmark --csv runtime/hacom_price_refs.csv -n 20` | Đo latency + accuracy | Khi so sánh backend |
 | `python -m pytest tests` | Chạy unit tests | Khi sửa code |
+
+---
+
+## FastAPI Web API Reference
+
+Khi khởi chạy server bằng lệnh:
+```bash
+python -m price_advisor serve --host 127.0.0.1 --port 8000
+```
+Hệ thống sẽ cung cấp các endpoint HTTP phục vụ tích hợp với ứng dụng khác (Web Frontend, Phase 1 Backend).
+
+### 1. API Gợi ý khoảng giá
+
+*   **Endpoint:** `/api/suggest`
+*   **Method:** `POST`
+*   **Content-Type:** `application/json`
+
+#### Tham số đầu vào (Request Body)
+
+```json
+{
+  "description": "Cáp đồng bọc nhựa PVC 2x1.5 mm2",
+  "unit": "m",
+  "backend": "gemini",
+  "top_k": 5
+}
+```
+
+*   `description` (string, bắt buộc): Mô tả chi tiết của vật tư cần tư vấn.
+*   `unit` (string, bắt buộc): Đơn vị tính (m, cái, bộ, kg, ...).
+*   `backend` (string, mặc định: `"ollama"`): Chọn `"gemini"` (dùng Gemini 1.5 Flash qua API ngoài) hoặc `"ollama"` (dùng Qwen3 nội bộ).
+*   `top_k` (integer, mặc định: `5`): Số lượng mẫu giá lịch sử tương đồng nhất lấy ra từ ChromaDB để làm ngữ cảnh RAG.
+
+#### Phản hồi thành công (Response JSON - 200 OK)
+
+Khi chạy thành công, API trả về cấu trúc gồm thông tin gợi ý từ LLM kèm danh sách tham chiếu gốc dùng để tính toán:
+
+```json
+{
+  "status": "success",
+  "suggestion": {
+    "price_low": 12000,
+    "price_high": 14500,
+    "unit": "m",
+    "confidence": 0.9,
+    "reasoning": "Đơn giá dựa vào 5 dữ liệu lịch sử ổn định từ 11.500đ đến 15.000đ; loại bỏ biến động nhiễu.",
+    "source_ids": ["HACOM-5f32a76d1e"],
+    "backend": "gemini",
+    "warnings": []
+  },
+  "references": [
+    {
+      "ref_id": "HACOM-5f32a76d1e",
+      "description": "Cáp đồng bọc nhựa PVC 2x1.5 mm2 Cadivi",
+      "unit": "m",
+      "price": 13200.0,
+      "source": "hacom_price_refs.csv",
+      "metadata": {
+        "project": "HACOM Mall",
+        "contractor": "Linh Anh"
+      }
+    }
+  ]
+}
+```
+
+#### Phản hồi lỗi (Response JSON - 200 OK / 500 Error)
+
+Nếu xảy ra lỗi nghiệp vụ (ví dụ: không tìm thấy đơn vị tính tương khớp trong DB), API trả về trạng thái lỗi:
+
+```json
+{
+  "status": "error",
+  "error": {
+    "error": "Không tìm thấy dữ liệu giá lịch sử tương khớp với đơn vị tính này.",
+    "description": "Vật tư không tồn tại",
+    "unit": "m"
+  }
+}
+```
+
+### 2. Ví dụ gọi qua CURL
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/suggest \
+     -H "Content-Type: application/json" \
+     -d '{"description": "Ống thép mạ kẽm phi 50", "unit": "m", "backend": "gemini"}'
+```
+
